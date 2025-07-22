@@ -153,12 +153,20 @@ class FinalScreen(tk.Frame):
             sectors = self.controller.final_ball_sectors
             sectors_string = getattr(self.controller, 'final_sectors_string', 'Unknown positions')
             
+            # Debug: Log what we received
+            print(f"🎯 FINAL SCREEN RECEIVED:")
+            print(f"   - Sectors: {sectors}")
+            print(f"   - Sectors type: {type(sectors)}")
+            print(f"   - Sectors length: {len(sectors)}")
+            print(f"   - Sectors string: {sectors_string}")
+            
             # Update main sectors display
             self.sectors_display.configure(text=f"Ball positions: {sectors_string}")
             
             # Create individual ball color displays
             total_points = 0
             for i, sector in enumerate(sectors):
+                print(f"   - Processing ball {i+1}: {sector}")
                 ball_frame = tk.Frame(self.ball_colors_frame, bg="#000000")
                 ball_frame.pack(side=tk.LEFT, padx=10, pady=5)
                 
