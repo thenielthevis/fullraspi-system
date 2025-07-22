@@ -30,6 +30,7 @@ rfid_callback = None
 coin_callback = None
 touch_callback = None
 proximity_callback = None
+led_callback = None
 
 def set_rfid_callback(cb):
     global rfid_callback
@@ -46,6 +47,10 @@ def set_touch_callback(cb):
 def set_proximity_callback(cb):
     global proximity_callback
     proximity_callback = cb
+
+def set_led_callback(cb):
+    global led_callback
+    led_callback = cb
 
 # MQTT Callbacks
 def on_connect(client, _userdata, _flags, rc, _props=None):
@@ -77,7 +82,10 @@ def on_message(_client, _userdata, msg):
             print(f"[PROXIMITY]  {packet}")
             if proximity_callback:
                 proximity_callback(packet['data'])
-        elif typ == "LED":      print(f"[LED]    {packet['data']}")
+        elif typ == "LED":      
+            print(f"[LED]    {packet['data']}")
+            if led_callback:
+                led_callback(packet['data'])
         elif typ == "SERVO":    print(f"[SERVO]  {packet['data']}")
         else:                   print(f"[{typ}]  {packet}")
     except Exception:

@@ -7,7 +7,7 @@ from screens.gameplay import GameplayScreen
 from screens.final_screen import FinalScreen
 from screens.end_screen import EndScreen
 from screens.rewards import RewardsScreen
-from TESTCONTROLLER import send_status_cmd, set_rfid_callback
+from TESTCONTROLLER import send_status_cmd, set_rfid_callback, set_coin_callback, set_touch_callback, set_proximity_callback, set_led_callback
 import paho.mqtt.client as mqtt
 from DbSetup import user_exists
 import uuid
@@ -23,6 +23,9 @@ class ArcadeApp(tk.Tk):
         # Initialize pygame mixer
         pygame.mixer.init()
         self.bgmusic_playing = False
+
+        # Initialize LED colors storage
+        self.led_colors = []  # Will store the 3 LED colors for matching bonus
 
         # Set up MQTT client with a unique client_id to avoid disconnect loops
         unique_id = f"PiControlClient-{uuid.uuid4()}"
@@ -104,6 +107,26 @@ class ArcadeApp(tk.Tk):
             except Exception as e:
                 print(f"[Proximity Parse Error] {e}")
         set_proximity_callback(on_proximity)
+
+        # Register callback for LED colors
+        def on_led_colors(led_data):
+            try:
+                # Parse LED colors from the message
+                # Example: "Color 1: Blue, Color 2: Black, Color 3: Orange"
+                if "Color 1:" in led_data and "Color 2:" in led_data and "Color 3:" in led_data:
+                    # Extract the 3 colors
+                    parts = led_data.split(", ")
+                    color1 = parts[0].split("Color 1: ")[1].strip()
+                    color2 = parts[1].split("Color 2: ")[1].strip() 
+                    color3 = parts[2].split("Color 3: ")[1].strip()
+                    
+                    self.led_colors = [color1, color2, color3]
+                    print(f"🎆 LED Colors stored for matching: {self.led_colors}")
+                else:
+                    print(f"🎆 Running LED animation")
+            except Exception as e:
+                print(f"[LED Color Parse Error] {e}")
+        set_led_callback(on_led_colors)
 
         container = tk.Frame(self)
         container.pack(fill="both", expand=True)
