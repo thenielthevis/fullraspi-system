@@ -512,6 +512,13 @@ class GameplayScreen(tk.Frame):
         self.controller.final_ball_sectors = self.detected_sectors.copy()
         self.controller.final_sectors_string = sectors_string
         
+        # Debug: Log what we're actually storing
+        print(f"🔍 STORING FOR FINAL SCREEN:")
+        print(f"   - Raw detected_sectors: {self.detected_sectors}")
+        print(f"   - Sectors stored: {self.controller.final_ball_sectors}")
+        print(f"   - String stored: {self.controller.final_sectors_string}")
+        print(f"   - Length of sectors: {len(self.detected_sectors)}")
+        
         # Clean up camera before transitioning
         self.cleanup_camera()
             
