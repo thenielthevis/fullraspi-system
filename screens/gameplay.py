@@ -444,17 +444,35 @@ class GameplayScreen(tk.Frame):
             
             elif len(valid_sectors) != 3:
                 # Reset if ball count changes
+                if self.balls_settled:
+                    print(f"⚠️ BALL COUNT CHANGED AFTER SETTLING!")
+                    print(f"   - Previous state: settled with 3 balls")
+                    print(f"   - Current valid sectors: {len(valid_sectors)}")
+                    print(f"   - Current sectors: {valid_sectors}")
+                    print(f"   - Resetting settling state...")
+                
                 self.first_detection_time = None
                 self.balls_settled = False
                 self.settling_label.configure(text="")
             
             # Check for game completion
             if len(valid_sectors) == 3 and self.balls_settled:
+                print(f"🎮 GAME COMPLETION CHECK:")
+                print(f"   - Valid sectors: {len(valid_sectors)} (need 3)")
+                print(f"   - Balls settled: {self.balls_settled}")
+                print(f"   - Current sectors: {valid_sectors}")
+                print(f"   - Auto-scored attribute exists: {hasattr(self, 'auto_scored')}")
+                if hasattr(self, 'auto_scored'):
+                    print(f"   - Auto-scored value: {self.auto_scored}")
+                
                 self.settling_label.configure(text="GAME COMPLETE! Press button below!")
                 # Auto-trigger ball scored after settling
                 if not hasattr(self, 'auto_scored'):
+                    print(f"🚀 TRIGGERING AUTO SCORE...")
                     self.auto_scored = True
                     self.after(1000, self.ball_scored)  # Auto-trigger after 1 second
+                else:
+                    print(f"⚠️ Auto-score already triggered, waiting...")
 
             # Draw colorful sector lines and labels
             self.draw_sectors(frame)
