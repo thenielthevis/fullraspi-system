@@ -138,11 +138,8 @@ class GameplayScreen(tk.Frame):
 
         # ========== CAMERA SETUP FROM objectTest.py ==========
         self.FRAME_WIDTH, self.FRAME_HEIGHT = 1280, 960
-        self.picam2 = Picamera2()
-        config = self.picam2.create_preview_configuration(main={"size": (self.FRAME_WIDTH, self.FRAME_HEIGHT), "format": "RGB888"})
-        self.picam2.configure(config)
-        self.picam2.start()
-
+        self.picam2 = None  # Initialize as None, will be created when needed
+        
         # ========== OBJECT DETECTION SETUP FROM objectTest.py ==========
         # Disc center from objectTest.py
         self.DISC_CENTER = (615, 430)  # Exact center from objectTest.py
@@ -181,17 +178,44 @@ class GameplayScreen(tk.Frame):
         self.balls_settled = False
         self.detected_sectors = []
         self.ball_count = 0
+        self.camera_running = False
 
-        self.update_camera()
+        # Don't start camera automatically - wait for screen to be shown
+
+    def init_camera(self):
+        """Initialize and start the camera when the screen is shown"""
+        if self.picam2 is None:
+            try:
+                print("[Camera] Initializing camera...")
+                self.picam2 = Picamera2()
+                config = self.picam2.create_preview_configuration(main={"size": (self.FRAME_WIDTH, self.FRAME_HEIGHT), "format": "RGB888"})
+                self.picam2.configure(config)
+                self.picam2.start()
+                self.camera_running = True
+                print("[Camera] Camera started successfully")
+                self.update_camera()  # Start the camera update loop
+            except Exception as e:
+                print(f"[Camera Error] Failed to initialize camera: {e}")
+                self.camera_running = False
 
     def cleanup_camera(self):
         """Clean up camera resources"""
         try:
-            if hasattr(self, 'picam2'):
+            self.camera_running = False
+            if hasattr(self, 'picam2') and self.picam2 is not None:
+                print("[Camera] Stopping camera...")
                 self.picam2.stop()
                 self.picam2.close()
+                self.picam2 = None
+                print("[Camera] Camera stopped successfully")
         except Exception as e:
             print(f"[Camera Cleanup Error] {e}")
+
+    def tkraise(self, aboveThis=None):
+        """Override tkraise to start camera when screen is shown"""
+        super().tkraise(aboveThis)
+        if not self.camera_running:
+            self.init_camera()
 
     def reset_detection(self):
         """Reset detection state for new game"""
@@ -203,6 +227,10 @@ class GameplayScreen(tk.Frame):
         self.balls_count_label.configure(text="Balls: 0")
         self.sectors_label.configure(text="Sectors:\nNone")
         self.settling_label.configure(text="")
+
+    def on_screen_leave(self):
+        """Called when leaving this screen - stop camera to save resources"""
+        self.cleanup_camera()
 
     def get_sector_label(self, center):
         """Get sector label based on ball position - from objectTest.py"""
@@ -372,71 +400,83 @@ class GameplayScreen(tk.Frame):
         return ", ".join(result_parts)
 
     def update_camera(self):
-        frame = self.picam2.capture_array()
-        hsv = cv2.cvtColor(frame, cv2.COLOR_RGB2HSV)
-
-        # Detect all balls and their sectors using objectTest.py logic
-        detected_sectors, ball_count = self.detect_multiple_balls_and_sectors(frame, hsv)
-        self.detected_sectors = detected_sectors
-        self.ball_count = ball_count
-        
-        # Get sectors as string for display
-        sectors_string = self.get_sectors_as_string(detected_sectors)
-        
-        # Update UI labels
-        self.balls_count_label.configure(text=f"Balls: {ball_count}")
-        self.sectors_label.configure(text=f"Sectors:\n{sectors_string}")
-        
-        # Check if we have exactly 3 balls with valid sectors
-        valid_sectors = [sector for sector in detected_sectors if sector != "Unknown"]
-        
-        # Handle settling time logic from objectTest.py
-        if len(valid_sectors) == 3 and not self.balls_settled:
-            if self.first_detection_time is None:
-                self.first_detection_time = time.time()
-                print(f"🕒 3 balls detected! Waiting {self.SETTLING_TIME} seconds for balls to settle...")
+        # Only update if camera is running and initialized
+        if not self.camera_running or self.picam2 is None:
+            return
             
-            # Calculate remaining time
-            elapsed_time = time.time() - self.first_detection_time
-            remaining_time = self.SETTLING_TIME - elapsed_time
+        try:
+            frame = self.picam2.capture_array()
+            hsv = cv2.cvtColor(frame, cv2.COLOR_RGB2HSV)
+
+            # Detect all balls and their sectors using objectTest.py logic
+            detected_sectors, ball_count = self.detect_multiple_balls_and_sectors(frame, hsv)
+            self.detected_sectors = detected_sectors
+            self.ball_count = ball_count
             
-            if remaining_time > 0:
-                # Display countdown
-                self.settling_label.configure(text=f"Settling... {remaining_time:.1f}s")
-            else:
-                self.balls_settled = True
-                self.settling_label.configure(text="Balls settled! Ready for final round!")
-                print(f"✅ Balls have settled! Final count validation...")
-                print(f"🎯 Final ball positions: {sectors_string}")
-        
-        elif len(valid_sectors) != 3:
-            # Reset if ball count changes
-            self.first_detection_time = None
-            self.balls_settled = False
-            self.settling_label.configure(text="")
-        
-        # Check for game completion
-        if len(valid_sectors) == 3 and self.balls_settled:
-            self.settling_label.configure(text="GAME COMPLETE! Press button below!")
-            # Auto-trigger ball scored after settling
-            if not hasattr(self, 'auto_scored'):
-                self.auto_scored = True
-                self.after(1000, self.ball_scored)  # Auto-trigger after 1 second
+            # Get sectors as string for display
+            sectors_string = self.get_sectors_as_string(detected_sectors)
+            
+            # Update UI labels
+            self.balls_count_label.configure(text=f"Balls: {ball_count}")
+            self.sectors_label.configure(text=f"Sectors:\n{sectors_string}")
+            
+            # Check if we have exactly 3 balls with valid sectors
+            valid_sectors = [sector for sector in detected_sectors if sector != "Unknown"]
+            
+            # Handle settling time logic from objectTest.py
+            if len(valid_sectors) == 3 and not self.balls_settled:
+                if self.first_detection_time is None:
+                    self.first_detection_time = time.time()
+                    print(f"🕒 3 balls detected! Waiting {self.SETTLING_TIME} seconds for balls to settle...")
+                
+                # Calculate remaining time
+                elapsed_time = time.time() - self.first_detection_time
+                remaining_time = self.SETTLING_TIME - elapsed_time
+                
+                if remaining_time > 0:
+                    # Display countdown
+                    self.settling_label.configure(text=f"Settling... {remaining_time:.1f}s")
+                else:
+                    self.balls_settled = True
+                    self.settling_label.configure(text="Balls settled! Ready for final round!")
+                    print(f"✅ Balls have settled! Final count validation...")
+                    print(f"🎯 Final ball positions: {sectors_string}")
+            
+            elif len(valid_sectors) != 3:
+                # Reset if ball count changes
+                self.first_detection_time = None
+                self.balls_settled = False
+                self.settling_label.configure(text="")
+            
+            # Check for game completion
+            if len(valid_sectors) == 3 and self.balls_settled:
+                self.settling_label.configure(text="GAME COMPLETE! Press button below!")
+                # Auto-trigger ball scored after settling
+                if not hasattr(self, 'auto_scored'):
+                    self.auto_scored = True
+                    self.after(1000, self.ball_scored)  # Auto-trigger after 1 second
 
-        # Draw colorful sector lines and labels
-        self.draw_sectors(frame)
+            # Draw colorful sector lines and labels
+            self.draw_sectors(frame)
 
-        # Draw enhanced disc center
-        cv2.circle(frame, self.DISC_CENTER, self.VISUAL_CONFIG['center_dot_size'], (255, 255, 255), -1)
-        cv2.circle(frame, self.DISC_CENTER, self.VISUAL_CONFIG['center_dot_size'] + 2, (0, 0, 0), 2)
+            # Draw enhanced disc center
+            cv2.circle(frame, self.DISC_CENTER, self.VISUAL_CONFIG['center_dot_size'], (255, 255, 255), -1)
+            cv2.circle(frame, self.DISC_CENTER, self.VISUAL_CONFIG['center_dot_size'] + 2, (0, 0, 0), 2)
 
-        # Display full-size camera frame (no resizing for better quality)
-        img = Image.fromarray(frame)
-        imgtk = ImageTk.PhotoImage(image=img)
-        self.camera_label.imgtk = imgtk
-        self.camera_label.config(image=imgtk)
+            # Display full-size camera frame (no resizing for better quality)
+            img = Image.fromarray(frame)
+            imgtk = ImageTk.PhotoImage(image=img)
+            self.camera_label.imgtk = imgtk
+            self.camera_label.config(image=imgtk)
 
-        self.after(30, self.update_camera)
+            # Continue camera updates only if camera is still running
+            if self.camera_running:
+                self.after(30, self.update_camera)
+                
+        except Exception as e:
+            print(f"[Camera Update Error] {e}")
+            if self.camera_running:
+                self.after(100, self.update_camera)  # Retry after a longer delay
 
     def ball_scored(self):
         self.score += 10
@@ -449,6 +489,10 @@ class GameplayScreen(tk.Frame):
         print(f"[GAME COMPLETE] Sensor detected {self.ball_count} balls!")
         print(f"[SECTORS] Final ball positions: {sectors_string}")
         print(f"[SCORE] Successful guesses: {self.successful_guesses}")
+        
+        # Store the detected sectors in the controller for final screen display
+        self.controller.final_ball_sectors = self.detected_sectors.copy()
+        self.controller.final_sectors_string = sectors_string
         
         # Clean up camera before transitioning
         self.cleanup_camera()
