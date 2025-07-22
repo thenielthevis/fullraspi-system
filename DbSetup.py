@@ -56,6 +56,24 @@ def user_exists(uid):
     conn.close()
     return exists
 
+def get_user_info(uid):
+    """Get user name and current points by UID"""
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("SELECT name, points FROM users WHERE uid = ?", (uid,))
+    result = cursor.fetchone()
+    conn.close()
+    return result  # Returns (name, points) tuple or None
+
+def add_points_to_user(uid, points_to_add):
+    """Add points to user's total points in database"""
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET points = points + ? WHERE uid = ?", (points_to_add, uid))
+    conn.commit()
+    conn.close()
+    print(f"[DB] Added {points_to_add} points to user {uid}")
+
 if __name__ == "__main__":
     insert_user("eli", "336ACDA6", 3, 1000)
     print("Inserted user: eli, 336ACDA6, 3, 1000")
