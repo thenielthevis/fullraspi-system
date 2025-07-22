@@ -1,6 +1,8 @@
 import tkinter as tk
 from PIL import Image, ImageTk
 import os
+from TESTCONTROLLER import send_status_cmd, main
+import threading
 
 class WelcomeScreen(tk.Frame):
     def __init__(self, parent, controller):
@@ -30,7 +32,7 @@ class WelcomeScreen(tk.Frame):
             pady=10
         )
         subtitle.place(relx=0.5, rely=0.55, anchor="center")
-        start_button = tk.Button(
+        self.start_button = tk.Button(
             self,
             text="SCAN RFID",
             font=("Press Start 2P", 15),
@@ -41,6 +43,21 @@ class WelcomeScreen(tk.Frame):
             relief="flat",
             padx=30,
             pady=10,
-            command=lambda: self.controller.show_frame("AddCreditScreen")
+            command=self.start_rfid
         )
-        start_button.place(relx=0.5, rely=0.7, anchor="center")
+        self.start_button.place(relx=0.5, rely=0.7, anchor="center")
+        self.loading = False
+
+    def start_rfid(self):
+        if self.loading:
+            return
+        self.loading = True
+        self.start_button.config(text="WAITING FOR RFID...", state="disabled")
+        if hasattr(self.controller, 'start_rfid'):
+            self.controller.start_rfid()
+        else:
+            print("RFID start method not available!")
+
+    def reset_loading(self):
+        self.loading = False
+        self.start_button.config(text="SCAN RFID", state="normal")

@@ -40,6 +40,13 @@ class InstructionScreen(tk.Frame):
             padx=20
         )
         instruction_label.place(relx=0.5, rely=0.5, anchor="center")
+        def on_continue():
+            if hasattr(self.controller, 'send_esp1_command'):
+                self.controller.send_esp1_command("START_TOUCH")
+            else:
+                from TESTCONTROLLER import send_status_cmd
+                send_status_cmd(self.controller.mqtt_client, "START_TOUCH", topic_override="esp32/control/esp1")
+            self.controller.show_frame("GameIntroScreen")
         continue_button = tk.Button(
             self,
             text="CONTINUE",
@@ -51,6 +58,6 @@ class InstructionScreen(tk.Frame):
             relief="flat",
             padx=30,
             pady=10,
-            command=lambda: self.controller.show_frame("GameIntroScreen")
+            command=on_continue
         )
         continue_button.place(relx=0.5, rely=0.8, anchor="center")

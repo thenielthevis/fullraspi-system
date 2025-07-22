@@ -1,0 +1,15 @@
+# Ignore virtual environments in any folder
+**/venv/
+**/.venv/
+**/env/
+**/.env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Editor config files
+.vscode/
+
+# OS junk files
+.DS_Store
