@@ -1,0 +1,26 @@
+# Basic Python requirements for Raspberry Pi Arcade System
+# Computer Vision and Camera
+opencv-python>=4.8.0
+picamera2>=0.3.12
+numpy>=1.24.0
+
+# GUI Framework
+tkinter  # Usually included with Python
+
+# Image Processing
+Pillow>=10.0.0
+
+# MQTT Communication
+paho-mqtt>=1.6.1
+
+# Audio/Sound
+pygame>=2.5.0
+
+# Hardware interfaces (Raspberry Pi specific)
+# These may need to be installed separately on Raspberry Pi:
+# RPi.GPIO  # For GPIO control
+# adafruit-circuitpython-rfid  # For RFID functionality
+
+# Development tools (optional)
+# pytest>=7.0.0  # For testing
+# black>=23.0.0  # For code formatting

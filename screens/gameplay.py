@@ -131,13 +131,13 @@ class GameplayScreen(tk.Frame):
 
         # --- Camera and Tracking Setup ---
         self.picam2 = Picamera2()
-        config = self.picam2.create_preview_configuration(main={"size": (640, 480), "format": "RGB888"})
+        config = self.picam2.create_preview_configuration(main={"size": (1280, 960), "format": "RGB888"})
         self.picam2.configure(config)
         self.picam2.start()
 
         # ========== OBJECT DETECTION SETUP FROM objectTest.py ==========
         # Disc center and sectors from objectTest.py
-        self.DISC_CENTER = (320, 240)  # Adjusted for smaller camera resolution
+        self.DISC_CENTER = (640, 480)  # Adjusted for 1280x960 camera resolution
         self.sectors = [
             ("Red",    -35,  23),
             ("Yellow", 25, 80),
@@ -153,8 +153,8 @@ class GameplayScreen(tk.Frame):
         
         # Visual config from objectTest.py
         self.VISUAL_CONFIG = {
-            'line_thickness': 2,
-            'line_length': 200,  # Adjusted for smaller display
+            'line_thickness': 3,
+            'line_length': 400,  # Adjusted for higher resolution
             'sector_colors': {
                 'Red': (0, 0, 255),
                 'Yellow': (0, 255, 255),
@@ -163,8 +163,8 @@ class GameplayScreen(tk.Frame):
                 'Orange': (0, 165, 255),
                 'Black': (128, 128, 128)
             },
-            'center_dot_size': 6,
-            'ball_circle_thickness': 2
+            'center_dot_size': 8,
+            'ball_circle_thickness': 3
         }
         
         # Settling time logic
@@ -273,7 +273,7 @@ class GameplayScreen(tk.Frame):
             
             # Calculate area to filter out noise
             area = cv2.countNonZero(ball_mask)
-            if area < 150:  # Adjusted for smaller resolution
+            if area < 600:  # Adjusted for higher resolution (1280x960)
                 continue
                 
             # Find contour for this ball
@@ -320,7 +320,7 @@ class GameplayScreen(tk.Frame):
                 ball_count = 0
                 
                 for contour in contours:
-                    if cv2.contourArea(contour) > 150:  # ignore small noise
+                    if cv2.contourArea(contour) > 600:  # ignore small noise (adjusted for higher resolution)
                         (x, y), radius = cv2.minEnclosingCircle(contour)
                         center = (int(x), int(y))
                         radius = int(radius)
