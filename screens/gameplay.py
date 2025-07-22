@@ -450,6 +450,10 @@ class GameplayScreen(tk.Frame):
         print(f"[SECTORS] Final ball positions: {sectors_string}")
         print(f"[SCORE] Successful guesses: {self.successful_guesses}")
         
+        # Store the detected sectors in the controller for final screen display
+        self.controller.final_ball_sectors = self.detected_sectors.copy()
+        self.controller.final_sectors_string = sectors_string
+        
         # Clean up camera before transitioning
         self.cleanup_camera()
             
