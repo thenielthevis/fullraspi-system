@@ -165,6 +165,24 @@ class FinalScreen(tk.Frame):
             
             # Create individual ball color displays
             total_points = 0
+            base_points = 0  # Track base points for bonus calculation
+            led_colors = getattr(self.controller, 'led_colors', [])
+            
+            print(f"🎆 LED Colors for matching: {led_colors}")
+            print(f"🎯 Ball sectors detected: {sectors}")
+            
+            # Check if LED colors match ball results (exact match including duplicates)
+            led_match_bonus = False
+            if len(led_colors) == 3 and len(sectors) == 3:
+                # Sort both lists to compare regardless of order
+                sorted_led = sorted(led_colors)
+                sorted_balls = sorted(sectors)
+                led_match_bonus = (sorted_led == sorted_balls)
+                print(f"🔍 LED vs Ball Match Check:")
+                print(f"   - LED colors sorted: {sorted_led}")
+                print(f"   - Ball colors sorted: {sorted_balls}")
+                print(f"   - Perfect match: {led_match_bonus}")
+            
             for i, sector in enumerate(sectors):
                 print(f"   - Processing ball {i+1}: {sector}")
                 ball_frame = tk.Frame(self.ball_colors_frame, bg="#000000")
@@ -195,7 +213,7 @@ class FinalScreen(tk.Frame):
                 
                 # Points for this ball
                 points = self.color_points.get(sector, 0)
-                total_points += points
+                base_points += points
                 points_label = tk.Label(
                     ball_frame,
                     text=f"{points} pts",
@@ -205,8 +223,20 @@ class FinalScreen(tk.Frame):
                 )
                 points_label.pack()
             
+            # Apply LED match bonus if applicable
+            if led_match_bonus:
+                total_points = base_points * 2
+                bonus_text = f"🎆 LED MATCH BONUS! 2X MULTIPLIER! 🎆\nBase Points: {base_points} × 2 = {total_points}"
+                print(f"💰 LED MATCH BONUS ACTIVATED! {base_points} × 2 = {total_points}")
+            else:
+                total_points = base_points
+                bonus_text = f"Total Points Earned: {total_points}"
+            
             # Update total points display
-            self.points_label.configure(text=f"Total Points Earned: {total_points}")
+            self.points_label.configure(
+                text=bonus_text,
+                fg="#ffff00" if led_match_bonus else "#00ff00"  # Gold color for bonus
+            )
             
         else:
             # No ball data available
@@ -214,13 +244,32 @@ class FinalScreen(tk.Frame):
             self.points_label.configure(text="Points: 0")
 
     def complete_round(self):
-        # Calculate and display final points
+        # Calculate and display final points with potential LED bonus
         if hasattr(self.controller, 'final_ball_sectors') and self.controller.final_ball_sectors:
             sectors = self.controller.final_ball_sectors
-            total_points = sum(self.color_points.get(sector, 0) for sector in sectors)
-            sectors_string = getattr(self.controller, 'final_sectors_string', 'Unknown')
-            print(f"[FINAL ROUND] Ball positions: {sectors_string}")
-            print(f"[FINAL ROUND] Total points awarded: {total_points}")
+            base_points = sum(self.color_points.get(sector, 0) for sector in sectors)
+            
+            # Check for LED match bonus
+            led_colors = getattr(self.controller, 'led_colors', [])
+            led_match_bonus = False
+            
+            if len(led_colors) == 3 and len(sectors) == 3:
+                sorted_led = sorted(led_colors)
+                sorted_balls = sorted(sectors)
+                led_match_bonus = (sorted_led == sorted_balls)
+            
+            if led_match_bonus:
+                total_points = base_points * 2
+                sectors_string = getattr(self.controller, 'final_sectors_string', 'Unknown')
+                print(f"[FINAL ROUND] Ball positions: {sectors_string}")
+                print(f"[FINAL ROUND] LED colors: {led_colors}")
+                print(f"[FINAL ROUND] 🎆 LED MATCH BONUS! Base points: {base_points} × 2 = {total_points}")
+            else:
+                total_points = base_points
+                sectors_string = getattr(self.controller, 'final_sectors_string', 'Unknown')
+                print(f"[FINAL ROUND] Ball positions: {sectors_string}")
+                print(f"[FINAL ROUND] LED colors: {led_colors} (no match)")
+                print(f"[FINAL ROUND] Total points awarded: {total_points}")
         else:
             print("[FINAL ROUND] No ball position data available")
         
