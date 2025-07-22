@@ -7,9 +7,7 @@ class FinalScreen(tk.Frame):
         super().__init__(parent)
         self.controller = controller
 
-        # Send the LED control command to ESP32
-        if hasattr(self.controller, 'send_esp2_command'):
-            self.controller.send_esp2_command("LED_RUN")
+        # Don't send LED command here - wait for screen to be shown
 
         # Load background image
         img_path = os.path.join("assets", "sp.png")
@@ -137,8 +135,11 @@ class FinalScreen(tk.Frame):
         }
 
     def tkraise(self, aboveThis=None):
-        """Override tkraise to update display when screen is shown"""
+        """Override tkraise to start LEDs when screen is shown"""
         super().tkraise(aboveThis)
+        # Send the LED control command to ESP32 when screen is actually shown
+        if hasattr(self.controller, 'send_esp2_command'):
+            self.controller.send_esp2_command("LED_RUN")
         self.update_ball_display()
 
     def update_ball_display(self):

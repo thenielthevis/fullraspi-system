@@ -173,7 +173,7 @@ class GameplayScreen(tk.Frame):
         }
         
         # Settling time logic
-        self.SETTLING_TIME = 4
+        self.SETTLING_TIME = 2
         self.first_detection_time = None
         self.balls_settled = False
         self.detected_sectors = []
