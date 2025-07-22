@@ -133,6 +133,32 @@ class FinalScreen(tk.Frame):
             'Black': '#808080',
             'Unknown': '#FFFFFF'
         }
+        
+        # Animation state for LED bonus celebration
+        self.animation_active = False
+        self.animation_count = 0
+
+    def celebration_animation(self):
+        """Animate the points label for LED bonus celebration"""
+        if not self.animation_active:
+            self.animation_active = True
+            self.animation_count = 0
+            self.flash_points_label()
+
+    def flash_points_label(self):
+        """Flash the points label between gold and white for celebration effect"""
+        if self.animation_count < 6:  # Flash 3 times (6 color changes)
+            if self.animation_count % 2 == 0:
+                self.points_label.configure(fg="#FFFFFF", font=("Press Start 2P", 12))  # White and bigger
+            else:
+                self.points_label.configure(fg="#FFD700", font=("Press Start 2P", 10))  # Gold and normal
+            
+            self.animation_count += 1
+            self.after(300, self.flash_points_label)  # Flash every 300ms
+        else:
+            # End animation with final gold color
+            self.points_label.configure(fg="#FFD700", font=("Press Start 2P", 10))
+            self.animation_active = False
 
     def tkraise(self, aboveThis=None):
         """Override tkraise to start LEDs when screen is shown"""
@@ -256,10 +282,24 @@ class FinalScreen(tk.Frame):
                 print(f"   - Regular points: {regular_points}")
                 print(f"   - Bonus points: {bonus_points}")
                 print(f"   - Total points: {total_points}")
+                
+                # 🚨 TRIGGER BEACON AND VISUAL CELEBRATION FOR LED BONUS! 🚨
+                print(f"🎆 TRIGGERING LED BONUS CELEBRATION!")
+                if hasattr(self.controller, 'send_esp2_command'):
+                    self.controller.send_esp2_command("BEACON_ON")
+                    print(f"🚨 BEACON_ON sent to ESP2")
+                
+                # Store that we have a multiplier bonus for the complete_round function
+                self.controller.has_led_multiplier = True
+                self.controller.led_bonus_balls = matched_balls
+                
+                # Update points label to flash/animate for bonus
+                self.celebration_animation()
             else:
                 bonus_text = f"Total Points Earned: {total_points}\n(No LED color matches)"
                 points_color = "#00ff00"
                 print(f"   - No LED matches found")
+                self.controller.has_led_multiplier = False
             
             # Update total points display
             self.points_label.configure(
@@ -310,8 +350,66 @@ class FinalScreen(tk.Frame):
                 
             # Store final points in controller for end screen
             self.controller.final_total_points = total_points
+            
+            # 🎯 HANDLE POST-GAME SEQUENCE: STEPPER & ULTRASONIC
+            self.start_post_game_sequence(matched_balls)
         else:
             print("[FINAL ROUND] No ball position data available")
             self.controller.final_total_points = 0
+            self.start_post_game_sequence([])  # No bonus, but still run sequence
+
+    def start_post_game_sequence(self, matched_balls):
+        """Handle the post-game sequence: stepper motor and ultrasonic verification"""
+        print(f"🔄 STARTING POST-GAME SEQUENCE...")
         
+        # If LED bonus occurred, beacon should already be ON from update_ball_display
+        # Wait a moment for celebration, then start stepper sequence
+        if matched_balls:
+            print(f"🎊 LED BONUS CELEBRATION - Beacon is ON, waiting for celebration...")
+            # Wait 3 seconds for celebration, then start stepper
+            self.after(3000, self.run_stepper_sequence)
+        else:
+            print(f"📦 No LED bonus - proceeding directly to ball collection...")
+            # No celebration needed, start stepper immediately
+            self.run_stepper_sequence()
+
+    def run_stepper_sequence(self):
+        """Run the stepper motor to drop/collect balls"""
+        print(f"🔄 RUNNING STEPPER MOTOR TO COLLECT BALLS...")
+        
+        # Turn off beacon if it was on
+        if hasattr(self.controller, 'has_led_multiplier') and self.controller.has_led_multiplier:
+            if hasattr(self.controller, 'send_esp2_command'):
+                self.controller.send_esp2_command("BEACON_OFF")
+                print(f"🚨 BEACON_OFF sent to ESP2")
+        
+        # Run stepper motor to drop/collect balls
+        if hasattr(self.controller, 'send_esp2_command'):
+            self.controller.send_esp2_command("STEPPER_RUN")
+            print(f"🔄 STEPPER_RUN sent to ESP2")
+        
+        # Wait for stepper to complete, then start ultrasonic verification
+        print(f"⏳ Waiting for stepper to complete ball collection...")
+        self.after(5000, self.run_ultrasonic_verification)  # Wait 5 seconds for stepper
+
+    def run_ultrasonic_verification(self):
+        """Run ultrasonic sensor to verify all balls are collected"""
+        print(f"📡 STARTING ULTRASONIC VERIFICATION...")
+        
+        # Start ultrasonic scan to verify ball collection
+        if hasattr(self.controller, 'send_esp2_command'):
+            self.controller.send_esp2_command("ULTRA_SCAN")
+            print(f"📡 ULTRA_SCAN sent to ESP2")
+        
+        # Wait for ultrasonic verification to complete
+        print(f"🔍 Verifying all balls are in container...")
+        self.after(3000, self.complete_verification)  # Wait 3 seconds for verification
+
+    def complete_verification(self):
+        """Complete the verification process and proceed to end screen"""
+        print(f"✅ POST-GAME SEQUENCE COMPLETE!")
+        print(f"📦 All balls should now be in container")
+        print(f"🎮 Proceeding to end screen...")
+        
+        # Proceed to end screen
         self.controller.show_frame("EndScreen")
