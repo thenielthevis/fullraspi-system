@@ -26,6 +26,10 @@ class ArcadeApp(tk.Tk):
 
         # Initialize LED colors storage
         self.led_colors = []  # Will store the 3 LED colors for matching bonus
+        
+        # Initialize current user info
+        self.current_user_uid = None
+        self.current_user_name = None
 
         # Set up MQTT client with a unique client_id to avoid disconnect loops
         unique_id = f"PiControlClient-{uuid.uuid4()}"

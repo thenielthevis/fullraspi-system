@@ -307,7 +307,11 @@ class FinalScreen(tk.Frame):
                 print(f"[FINAL ROUND] Base points: {base_points}, Final total: {total_points}")
             else:
                 print(f"[FINAL ROUND] No LED color matches - Total points: {total_points}")
+                
+            # Store final points in controller for end screen
+            self.controller.final_total_points = total_points
         else:
             print("[FINAL ROUND] No ball position data available")
+            self.controller.final_total_points = 0
         
         self.controller.show_frame("EndScreen")

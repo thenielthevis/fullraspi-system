@@ -99,14 +99,18 @@ class AddCreditScreen(tk.Frame):
 
     def set_uid(self, uid):
         self.current_uid = uid
-        # Fetch credit from DB
+        # Fetch credit and name from DB
         conn = sqlite3.connect('arpi.sqlite')
         cursor = conn.cursor()
-        cursor.execute("SELECT credit FROM users WHERE uid = ?", (uid,))
+        cursor.execute("SELECT credit, name FROM users WHERE uid = ?", (uid,))
         row = cursor.fetchone()
         conn.close()
         if row:
             self.credit_label.config(text=f"CREDIT: {row[0]}")
+            # Store user info in controller for later use
+            self.controller.current_user_uid = uid
+            self.controller.current_user_name = row[1]
+            print(f"[User] Logged in: {row[1]} (UID: {uid})")
         else:
             self.credit_label.config(text="CREDIT: -")
 
