@@ -13,131 +13,139 @@ class GameplayScreen(tk.Frame):
         self.controller = controller
         self.score = 0
         self.successful_guesses = 0
+        self.configure(bg="#000000")
 
-        img_path = os.path.join("assets", "sp.png")
-        original_img = Image.open(img_path)
-        resized_img = original_img.resize((800, 600))
-        self.bg_image = ImageTk.PhotoImage(resized_img)
-        background_label = tk.Label(self, image=self.bg_image)
-        background_label.place(relwidth=1, relheight=1)
-
-        title = tk.Label(
+        # --- Full-size Camera Frame for Video (Primary display) ---
+        self.camera_frame = tk.Frame(
             self,
-            text="GAMEPLAY",
-            font=("Press Start 2P", 25),
-            fg="#00ffff",
-            bg="#000000",
-            pady=20
-        )
-        title.place(relx=0.5, rely=0.3, anchor="center")
-
-        self.score_label = tk.Label(
-            self,
-            text=f"SCORE: {self.score}",
-            font=("Press Start 2P", 12),
-            fg="#ffffff",
-            bg="#000000",
-            pady=5
-        )
-        self.score_label.place(relx=0.0, rely=0.0, anchor="nw", x=10, y=10)
-
-        self.guesses_label = tk.Label(
-            self,
-            text=f"SUCCESSFUL GUESSES: {self.successful_guesses}",
-            font=("Press Start 2P", 12),
-            fg="#ffffff",
-            bg="#000000",
-            pady=5
-        )
-        self.guesses_label.place(relx=0.0, rely=0.05, anchor="nw", x=10, y=40)
-
-        instruction_label = tk.Label(
-            self,
-            text="Watch the ball enter a tunnel\nand spin the wheel for points!",
-            font=("Press Start 2P", 15),
-            fg="#ffffff",
-            bg="#000000",
-            justify="center",
-            padx=15
-        )
-        instruction_label.place(relx=0.5, rely=0.45, anchor="center")
-
-        # --- Camera Frame and Label for Video ---
-        camera_frame = tk.Frame(
-            self,
-            width=400,
-            height=300,
-            bg="#000000",
-            relief="ridge",
-            bd=3
-        )
-        camera_frame.place(relx=1.0, rely=0.0, anchor="ne", x=-10, y=10)
-        self.camera_label = tk.Label(camera_frame)
-        self.camera_label.pack(fill="both", expand=True)
-
-        # --- Detection Results Display ---
-        self.detection_frame = tk.Frame(
-            self,
-            width=350,
-            height=120,
             bg="#000000",
             relief="ridge",
             bd=2
         )
-        self.detection_frame.place(relx=1.0, rely=0.4, anchor="ne", x=-10, y=10)
+        self.camera_frame.place(relwidth=0.85, relheight=1.0, relx=0, rely=0)
+        self.camera_label = tk.Label(self.camera_frame, bg="#000000")
+        self.camera_label.pack(fill="both", expand=True)
+
+        # --- Right Side Panel for UI Elements ---
+        self.ui_panel = tk.Frame(
+            self,
+            bg="#000000",
+            relief="ridge",
+            bd=2
+        )
+        self.ui_panel.place(relwidth=0.15, relheight=1.0, relx=0.85, rely=0)
+
+        # Title at top of right panel
+        title = tk.Label(
+            self.ui_panel,
+            text="GAMEPLAY",
+            font=("Press Start 2P", 16),
+            fg="#00ffff",
+            bg="#000000",
+            pady=10
+        )
+        title.pack(pady=(10, 5))
+
+        # Score labels
+        self.score_label = tk.Label(
+            self.ui_panel,
+            text=f"SCORE:\n{self.score}",
+            font=("Press Start 2P", 10),
+            fg="#ffffff",
+            bg="#000000",
+            justify="center"
+        )
+        self.score_label.pack(pady=5)
+
+        self.guesses_label = tk.Label(
+            self.ui_panel,
+            text=f"GUESSES:\n{self.successful_guesses}",
+            font=("Press Start 2P", 8),
+            fg="#ffffff",
+            bg="#000000",
+            justify="center"
+        )
+        self.guesses_label.pack(pady=5)
+
+        # Detection Results Display
+        detection_title = tk.Label(
+            self.ui_panel,
+            text="DETECTION:",
+            font=("Press Start 2P", 8),
+            fg="#00ffff",
+            bg="#000000"
+        )
+        detection_title.pack(pady=(15, 5))
         
         self.balls_count_label = tk.Label(
-            self.detection_frame,
-            text="Balls detected: 0",
-            font=("Press Start 2P", 10),
+            self.ui_panel,
+            text="Balls: 0",
+            font=("Press Start 2P", 8),
             fg="#00ff00",
             bg="#000000"
         )
-        self.balls_count_label.pack(pady=5)
+        self.balls_count_label.pack(pady=2)
         
         self.sectors_label = tk.Label(
-            self.detection_frame,
-            text="Sectors: None",
-            font=("Press Start 2P", 8),
+            self.ui_panel,
+            text="Sectors:\nNone",
+            font=("Press Start 2P", 7),
             fg="#ffff00",
             bg="#000000",
-            wraplength=320
+            justify="center",
+            wraplength=100
         )
         self.sectors_label.pack(pady=2)
         
         self.settling_label = tk.Label(
-            self.detection_frame,
+            self.ui_panel,
             text="",
-            font=("Press Start 2P", 8),
+            font=("Press Start 2P", 7),
             fg="#ff6600",
-            bg="#000000"
+            bg="#000000",
+            justify="center",
+            wraplength=100
         )
         self.settling_label.pack(pady=2)
 
+        # Instructions
+        instruction_label = tk.Label(
+            self.ui_panel,
+            text="Watch balls\nenter sectors\nfor points!",
+            font=("Press Start 2P", 7),
+            fg="#ffffff",
+            bg="#000000",
+            justify="center"
+        )
+        instruction_label.pack(pady=(15, 10))
+
+        # Sensor button
         scored_button = tk.Button(
-            self,
-            text="SENSOR DETECTED BALL",
-            font=("Press Start 2P", 15),
+            self.ui_panel,
+            text="SENSOR\nDETECTED\nBALL",
+            font=("Press Start 2P", 8),
             bg="#0f0f0f",
             fg="#00ffff",
             activebackground="#1e1e1e",
             activeforeground="#ff66cc",
             relief="flat",
-            padx=30,
-            pady=10,
-            command=self.ball_scored
+            padx=10,
+            pady=8,
+            command=self.ball_scored,
+            justify="center"
         )
-        scored_button.place(relx=0.5, rely=0.6, anchor="center")
+        scored_button.pack(pady=10, padx=5, fill="x")
 
-        # --- Camera and Tracking Setup ---
+        # ========== CAMERA SETUP FROM objectTest.py ==========
+        self.FRAME_WIDTH, self.FRAME_HEIGHT = 1280, 960
         self.picam2 = Picamera2()
-        config = self.picam2.create_preview_configuration(main={"size": (1280, 960), "format": "RGB888"})
+        config = self.picam2.create_preview_configuration(main={"size": (self.FRAME_WIDTH, self.FRAME_HEIGHT), "format": "RGB888"})
         self.picam2.configure(config)
         self.picam2.start()
 
         # ========== OBJECT DETECTION SETUP FROM objectTest.py ==========
-        # Disc center and sectors from objectTest.py
-        self.DISC_CENTER = (640, 480)  # Adjusted for 1280x960 camera resolution
+        # Disc center from objectTest.py
+        self.DISC_CENTER = (615, 430)  # Exact center from objectTest.py
         self.sectors = [
             ("Red",    -35,  23),
             ("Yellow", 25, 80),
@@ -151,10 +159,10 @@ class GameplayScreen(tk.Frame):
         self.lower_ball = np.array([129, 102, 194])
         self.upper_ball = np.array([179, 255, 255])
         
-        # Visual config from objectTest.py
+        # Visual config from objectTest.py (exact copy)
         self.VISUAL_CONFIG = {
             'line_thickness': 3,
-            'line_length': 400,  # Adjusted for higher resolution
+            'line_length': 400,
             'sector_colors': {
                 'Red': (0, 0, 255),
                 'Yellow': (0, 255, 255),
@@ -192,8 +200,8 @@ class GameplayScreen(tk.Frame):
         self.detected_sectors = []
         self.ball_count = 0
         self.auto_scored = False
-        self.balls_count_label.configure(text="Balls detected: 0")
-        self.sectors_label.configure(text="Sectors: None")
+        self.balls_count_label.configure(text="Balls: 0")
+        self.sectors_label.configure(text="Sectors:\nNone")
         self.settling_label.configure(text="")
 
     def get_sector_label(self, center):
@@ -209,7 +217,7 @@ class GameplayScreen(tk.Frame):
         return "Unknown"
 
     def draw_sectors(self, frame):
-        """Draw colorful sector lines and labels - from objectTest.py"""
+        """Draw colorful sector lines and labels - exact copy from objectTest.py"""
         for label, angle_start, angle_end in self.sectors:
             # Get color for this sector
             color = self.VISUAL_CONFIG['sector_colors'].get(label, (200, 200, 200))
@@ -222,15 +230,15 @@ class GameplayScreen(tk.Frame):
 
             # Draw label in middle of sector with colored background
             mid_angle = math.radians((angle_start + angle_end) / 2)
-            lx = int(self.DISC_CENTER[0] + 125 * math.cos(mid_angle))
-            ly = int(self.DISC_CENTER[1] - 125 * math.sin(mid_angle))
+            lx = int(self.DISC_CENTER[0] + 250 * math.cos(mid_angle))
+            ly = int(self.DISC_CENTER[1] - 250 * math.sin(mid_angle))
             
             # Add colored background for text
-            text_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.4, 1)[0]
-            cv2.rectangle(frame, (lx - text_size[0]//2 - 3, ly - text_size[1] - 3), 
-                         (lx + text_size[0]//2 + 3, ly + 3), color, -1)
+            text_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)[0]
+            cv2.rectangle(frame, (lx - text_size[0]//2 - 5, ly - text_size[1] - 5), 
+                         (lx + text_size[0]//2 + 5, ly + 5), color, -1)
             cv2.putText(frame, label, (lx - text_size[0]//2, ly), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
 
     def detect_multiple_balls_and_sectors(self, frame, hsv):
         """Detect multiple balls and return their sectors - from objectTest.py"""
@@ -273,7 +281,7 @@ class GameplayScreen(tk.Frame):
             
             # Calculate area to filter out noise
             area = cv2.countNonZero(ball_mask)
-            if area < 600:  # Adjusted for higher resolution (1280x960)
+            if area < 300:  # Minimum area for a ball from objectTest.py
                 continue
                 
             # Find contour for this ball
@@ -286,8 +294,8 @@ class GameplayScreen(tk.Frame):
             center = (int(x), int(y))
             radius = int(radius)
             
-            # Additional validation: check if radius is reasonable for a ball
-            if radius < 5 or radius > 50:  # Adjusted for smaller resolution
+            # Additional validation: check if radius is reasonable for a ball (from objectTest.py)
+            if radius < 8 or radius > 100:  # Exact values from objectTest.py
                 continue
                 
             ball_count += 1
@@ -320,12 +328,12 @@ class GameplayScreen(tk.Frame):
                 ball_count = 0
                 
                 for contour in contours:
-                    if cv2.contourArea(contour) > 600:  # ignore small noise (adjusted for higher resolution)
+                    if cv2.contourArea(contour) > 300:  # Exact area threshold from objectTest.py
                         (x, y), radius = cv2.minEnclosingCircle(contour)
                         center = (int(x), int(y))
                         radius = int(radius)
                         
-                        if radius >= 5 and radius <= 50:
+                        if radius >= 8 and radius <= 100:  # Exact radius validation from objectTest.py
                             ball_count += 1
                             
                             cv2.circle(frame, center, radius, (0, 255, 255), self.VISUAL_CONFIG['ball_circle_thickness'])
@@ -376,8 +384,8 @@ class GameplayScreen(tk.Frame):
         sectors_string = self.get_sectors_as_string(detected_sectors)
         
         # Update UI labels
-        self.balls_count_label.configure(text=f"Balls detected: {ball_count}")
-        self.sectors_label.configure(text=f"Sectors: {sectors_string}")
+        self.balls_count_label.configure(text=f"Balls: {ball_count}")
+        self.sectors_label.configure(text=f"Sectors:\n{sectors_string}")
         
         # Check if we have exactly 3 balls with valid sectors
         valid_sectors = [sector for sector in detected_sectors if sector != "Unknown"]
@@ -422,8 +430,7 @@ class GameplayScreen(tk.Frame):
         cv2.circle(frame, self.DISC_CENTER, self.VISUAL_CONFIG['center_dot_size'], (255, 255, 255), -1)
         cv2.circle(frame, self.DISC_CENTER, self.VISUAL_CONFIG['center_dot_size'] + 2, (0, 0, 0), 2)
 
-        # Resize for display in the camera frame
-        frame = cv2.resize(frame, (400, 300))
+        # Display full-size camera frame (no resizing for better quality)
         img = Image.fromarray(frame)
         imgtk = ImageTk.PhotoImage(image=img)
         self.camera_label.imgtk = imgtk
@@ -434,8 +441,8 @@ class GameplayScreen(tk.Frame):
     def ball_scored(self):
         self.score += 10
         self.successful_guesses += 1
-        self.score_label.configure(text=f"SCORE: {self.score}")
-        self.guesses_label.configure(text=f"SUCCESSFUL GUESSES: {self.successful_guesses}")
+        self.score_label.configure(text=f"SCORE:\n{self.score}")
+        self.guesses_label.configure(text=f"GUESSES:\n{self.successful_guesses}")
         
         # Include sector information in the output
         sectors_string = self.get_sectors_as_string(self.detected_sectors)
