@@ -188,7 +188,17 @@ class ArcadeApp(tk.Tk):
                     color3 = parts[2].split("Color 3: ")[1].strip()
                     
                     self.led_colors = [color1, color2, color3]
-                    print(f"🎆 LED Colors stored for matching: {self.led_colors}")
+                    print(f"🎆 LED Colors received from ESP32: {self.led_colors}")
+                    
+                    # Check if we're in gameplay screen and trigger multiplier check
+                    current_frame = getattr(self, 'current_frame', None)
+                    if current_frame == "GameplayScreen":
+                        gameplay_screen = self.frames.get("GameplayScreen")
+                        if gameplay_screen and hasattr(gameplay_screen, 'balls_settled') and gameplay_screen.balls_settled:
+                            print(f"🎆 Balls are settled, triggering LED multiplier check...")
+                            gameplay_screen.check_and_show_led_multiplier()
+                        else:
+                            print(f"🎆 LED colors stored, waiting for balls to settle...")
                 else:
                     print(f"🎆 Running LED animation")
             except Exception as e:
@@ -244,6 +254,9 @@ class ArcadeApp(tk.Tk):
     def show_frame(self, screen_name):
         frame = self.frames[screen_name]
         frame.tkraise()
+        
+        # Track current frame for LED callback
+        self.current_frame = screen_name
 
         # 🔊 Screen-specific audio cues
         try:

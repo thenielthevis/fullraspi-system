@@ -50,20 +50,61 @@ class EndScreen(tk.Frame):
             font=("Press Start 2P", 16),
             fg="#00ff00",
             bg="#000000",
-            pady=10
+            pady=5
         )
-        self.round_points_label.place(relx=0.5, rely=0.4, anchor="center")
+        self.round_points_label.place(relx=0.5, rely=0.35, anchor="center")
         
-        # Bonus breakdown label
-        self.bonus_breakdown_label = tk.Label(
+        # Points breakdown section
+        breakdown_title = tk.Label(
             self,
-            text="",
-            font=("Press Start 2P", 10),
-            fg="#FFAA00",
+            text="POINTS BREAKDOWN:",
+            font=("Press Start 2P", 12),
+            fg="#ffaa00",
             bg="#000000",
             pady=5
         )
-        self.bonus_breakdown_label.place(relx=0.5, rely=0.48, anchor="center")
+        breakdown_title.place(relx=0.5, rely=0.42, anchor="center")
+        
+        # Detailed breakdown labels
+        self.base_points_label = tk.Label(
+            self,
+            text="",
+            font=("Press Start 2P", 9),
+            fg="#ffffff",
+            bg="#000000",
+            pady=2
+        )
+        self.base_points_label.place(relx=0.5, rely=0.47, anchor="center")
+        
+        self.tunnel_bonus_label = tk.Label(
+            self,
+            text="",
+            font=("Press Start 2P", 9),
+            fg="#00ffff",
+            bg="#000000",
+            pady=2
+        )
+        self.tunnel_bonus_label.place(relx=0.5, rely=0.51, anchor="center")
+        
+        self.led_bonus_label = tk.Label(
+            self,
+            text="",
+            font=("Press Start 2P", 9),
+            fg="#ff6600",
+            bg="#000000",
+            pady=2
+        )
+        self.led_bonus_label.place(relx=0.5, rely=0.55, anchor="center")
+        
+        self.beacon_status_label = tk.Label(
+            self,
+            text="",
+            font=("Press Start 2P", 8),
+            fg="#ff0000",
+            bg="#000000",
+            pady=2
+        )
+        self.beacon_status_label.place(relx=0.5, rely=0.59, anchor="center")
         
         # Total points label (will be updated when screen is shown)
         self.total_points_label = tk.Label(
@@ -74,7 +115,7 @@ class EndScreen(tk.Frame):
             bg="#000000",
             pady=10
         )
-        self.total_points_label.place(relx=0.5, rely=0.55, anchor="center")
+        self.total_points_label.place(relx=0.5, rely=0.67, anchor="center")
         
         # Status message
         self.status_label = tk.Label(
@@ -83,9 +124,9 @@ class EndScreen(tk.Frame):
             font=("Press Start 2P", 10),
             fg="#00ffff",
             bg="#000000",
-            pady=15
+            pady=10
         )
-        self.status_label.place(relx=0.5, rely=0.7, anchor="center")
+        self.status_label.place(relx=0.5, rely=0.75, anchor="center")
         
         # Play Again button
         play_again_button = tk.Button(
@@ -101,7 +142,7 @@ class EndScreen(tk.Frame):
             pady=10,
             command=self.play_again
         )
-        play_again_button.place(relx=0.5, rely=0.8, anchor="center")
+        play_again_button.place(relx=0.5, rely=0.85, anchor="center")
         
         # Back to Welcome button
         back_button = tk.Button(
@@ -117,7 +158,7 @@ class EndScreen(tk.Frame):
             pady=8,
             command=lambda: self.controller.show_frame("WelcomeScreen")
         )
-        back_button.place(relx=0.5, rely=0.9, anchor="center")
+        back_button.place(relx=0.5, rely=0.93, anchor="center")
 
     def tkraise(self, aboveThis=None):
         """Override tkraise to update display when screen is shown"""
@@ -137,20 +178,38 @@ class EndScreen(tk.Frame):
         # Update round points
         self.round_points_label.config(text=f"Round Points: {round_points}")
         
-        # Show bonus breakdown if available
-        prediction_bonus = getattr(self.controller, 'prediction_bonus', 0)
-        correct_predictions = getattr(self.controller, 'correct_predictions', 0)
+        # Get detailed points breakdown
+        points_breakdown = getattr(self.controller, 'points_breakdown', {})
         
-        bonus_breakdown = ""
-        if prediction_bonus > 0:
-            bonus_breakdown += f"🎯 Tunnel Bonus: {correct_predictions}/3 (+{prediction_bonus})\n"
-        if hasattr(self.controller, 'has_led_multiplier') and self.controller.has_led_multiplier:
-            bonus_breakdown += f"🎆 LED Multiplier Bonus Applied\n"
+        # Display base points
+        base_points = points_breakdown.get('base_points', 0)
+        self.base_points_label.config(text=f"🎮 Base Game Points: +{base_points}")
         
-        if bonus_breakdown:
-            self.bonus_breakdown_label.config(text=bonus_breakdown.strip())
+        # Display tunnel bonus
+        tunnel_bonus = points_breakdown.get('tunnel_bonus', 0)
+        if tunnel_bonus > 0:
+            tunnel_matches = points_breakdown.get('tunnel_matches', 0)
+            self.tunnel_bonus_label.config(text=f"🎯 Tunnel Predictions: +{tunnel_bonus}")
         else:
-            self.bonus_breakdown_label.config(text="No bonus points this round")
+            self.tunnel_bonus_label.config(text="🎯 Tunnel Predictions: +0 (No matches)")
+        
+        # Display LED multiplier bonus
+        led_bonus = points_breakdown.get('led_multiplier_bonus', 0)
+        if led_bonus > 0:
+            led_matches = points_breakdown.get('led_matches', 0)
+            matched_colors = points_breakdown.get('matched_colors', [])
+            colors_text = ', '.join(matched_colors) if matched_colors else 'None'
+            self.led_bonus_label.config(text=f"🎆 LED Multiplier ({led_matches}x): +{led_bonus}")
+            
+            # Show beacon status
+            beacon_activated = points_breakdown.get('beacon_activated', False)
+            if beacon_activated:
+                self.beacon_status_label.config(text="🚨 BEACON ACTIVATED! 🚨")
+            else:
+                self.beacon_status_label.config(text="")
+        else:
+            self.led_bonus_label.config(text="🎆 LED Multiplier: +0 (No matches)")
+            self.beacon_status_label.config(text="")
         
         # Save points to database and get updated total
         if player_uid and round_points > 0:
@@ -168,6 +227,7 @@ class EndScreen(tk.Frame):
                         fg="#00ff00"
                     )
                     print(f"[END SCREEN] Points saved: {player_name} earned {round_points} points (Total: {total_points})")
+                    print(f"[END SCREEN] Breakdown: Base({base_points}) + Tunnel({tunnel_bonus}) + LED({led_bonus}) = {round_points}")
                 else:
                     self.total_points_label.config(text="Total Points: Error")
                     self.status_label.config(
@@ -204,6 +264,8 @@ class EndScreen(tk.Frame):
             delattr(self.controller, 'final_sectors_string')
         if hasattr(self.controller, 'final_total_points'):
             delattr(self.controller, 'final_total_points')
+        if hasattr(self.controller, 'points_breakdown'):
+            delattr(self.controller, 'points_breakdown')
         if hasattr(self.controller, 'prediction_bonus'):
             delattr(self.controller, 'prediction_bonus')
         if hasattr(self.controller, 'correct_predictions'):
