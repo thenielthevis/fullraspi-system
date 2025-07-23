@@ -384,16 +384,16 @@ class GameplayScreen(tk.Frame):
                                     offset_x = (i - 1) * radius // 2
                                     ball_center = (cx + offset_x, cy)
                                     
-                                    cv2.circle(frame, ball_center, radius // 2, (0, 255, 255), self.VISUAL_CONFIG['ball_circle_thickness'])
+                                    cv2.circle(frame, ball_center, radius, (0, 255, 255), self.VISUAL_CONFIG['ball_circle_thickness'])
                                     # Removed small inner circle: cv2.circle(frame, ball_center, 5, (0, 0, 255), -1)
                                     
-                                    cv2.putText(frame, f"Ball {ball_count}", (ball_center[0] - 25, ball_center[1] - radius // 2 - 10), 
+                                    cv2.putText(frame, f"Ball {ball_count}", (ball_center[0] - 25, ball_center[1] - radius - 10), 
                                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
                                     
                                     sector_label = self.get_sector_label(ball_center)
                                     detected_sectors.append(sector_label)
                                     
-                                    cv2.putText(frame, sector_label, (ball_center[0] - 20, ball_center[1] + radius // 2 + 20), 
+                                    cv2.putText(frame, sector_label, (ball_center[0] - 20, ball_center[1] + radius + 20), 
                                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, 
                                                self.VISUAL_CONFIG['sector_colors'].get(sector_label, (255, 255, 255)), 2)
                         else:
@@ -458,6 +458,10 @@ class GameplayScreen(tk.Frame):
             
             # Check if we have exactly 3 balls with valid sectors
             valid_sectors = [sector for sector in detected_sectors if sector != "Unknown"]
+            
+            # DEBUG: Enhanced logging for detection issues
+            print(f"[DETECTION DEBUG] Ball count: {ball_count}, Valid sectors: {len(valid_sectors)}, Sectors: {valid_sectors}")
+            print(f"[DETECTION DEBUG] Balls settled: {self.balls_settled}, First detection time: {self.first_detection_time}")
             
             # Handle settling time logic from objectTest.py
             if len(valid_sectors) == 3 and not self.balls_settled:

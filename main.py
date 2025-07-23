@@ -90,10 +90,14 @@ class ArcadeApp(tk.Tk):
 
         # --- COIN EVENT HANDLING ---
         def on_coin():
+            print("[COIN DEBUG] Coin callback triggered!")
             self.play_coin_insert_sound()
             add_credit_screen = self.frames.get("AddCreditScreen")
             if add_credit_screen:
+                print("[COIN DEBUG] Adding credit to screen")
                 self.after(0, add_credit_screen.on_coin_inserted)
+            else:
+                print("[COIN DEBUG] No AddCreditScreen found!")
 
         from TESTCONTROLLER import set_coin_callback, set_touch_callback, set_proximity_callback
         set_coin_callback(on_coin)
@@ -115,25 +119,31 @@ class ArcadeApp(tk.Tk):
         # Map proximity sensors to tunnel names
         # These sensors detect balls passing through tunnels BEFORE they hit the color disc
         self.sensor_to_tunnel = {
-            "sensor1": "Tunnel A",
-            "sensor2": "Tunnel B", 
-            "sensor3": "Tunnel C",
-            "sensor4": "Tunnel D",
-            "sensor5": "Tunnel E"
+            "0": "Tunnel A",    # Changed from "sensor1" to "0"
+            "1": "Tunnel B",    # Changed from "sensor2" to "1" 
+            "2": "Tunnel C",    # Changed from "sensor3" to "2"
+            "3": "Tunnel D",    # Changed from "sensor4" to "3"
+            "4": "Tunnel E"     # Changed from "sensor5" to "4"
         }
         
         def on_proximity(data):
             try:
                 sensor, state = data.split(":")
+                print(f"[PROXIMITY DEBUG] Raw data: {data}, Sensor: {sensor}, State: {state}")
+                
                 if sensor not in self.proximity_last_state:
                     self.proximity_last_state[sensor] = state
+                    print(f"[PROXIMITY DEBUG] First state for sensor {sensor}: {state}")
                     return
+                    
                 last = self.proximity_last_state[sensor]
                 self.proximity_last_state[sensor] = state
+                print(f"[PROXIMITY DEBUG] Sensor {sensor}: {last} -> {state}")
                 
                 # Ball passed through tunnel (falling edge: 1 -> 0)
                 if last == "1" and state == "0":
                     self.proximity_count += 1
+                    print(f"[PROXIMITY DEBUG] ✅ BALL DETECTED! Count: {self.proximity_count}")
                     
                     # Record which tunnel the ball passed through
                     if sensor in self.sensor_to_tunnel:
@@ -144,6 +154,7 @@ class ArcadeApp(tk.Tk):
                         
                         # Check if this was a correct prediction and award points + show popup
                         tunnel_predictions = getattr(self, 'tunnel_predictions', [])
+                        print(f"[PROXIMITY DEBUG] Tunnel predictions: {tunnel_predictions}")
                         if tunnel_name in tunnel_predictions:
                             # Award immediate points for correct tunnel prediction
                             gameplay_screen = self.frames.get("GameplayScreen")
@@ -155,6 +166,7 @@ class ArcadeApp(tk.Tk):
                             self.show_tunnel_success_popup(tunnel_name)
                     
                     if self.proximity_count >= 3:
+                        print(f"[PROXIMITY DEBUG] Stopping proximity sensors - 3 balls detected")
                         if hasattr(self, 'send_esp1_command'):
                             self.send_esp1_command("STOP_PROXIMITY")
                         else:
