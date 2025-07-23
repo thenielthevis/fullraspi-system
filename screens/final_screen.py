@@ -332,9 +332,36 @@ class FinalScreen(tk.Frame):
     def tkraise(self, aboveThis=None):
         """Override tkraise to start LEDs when screen is shown"""
         super().tkraise(aboveThis)
-        # Send the LED control command to ESP32 when screen is actually shown
-        if hasattr(self.controller, 'send_esp2_command'):
-            self.controller.send_esp2_command("LED_RUN")
+        
+        # 🚨 VALIDATE: Only proceed if we have exactly 3 balls and 3 valid sectors
+        if hasattr(self.controller, 'final_ball_sectors') and self.controller.final_ball_sectors:
+            sectors = self.controller.final_ball_sectors
+            ball_count = len(sectors)
+            
+            # Count valid sectors (non-empty, non-"Unknown")
+            valid_sectors = [sector for sector in sectors if sector and sector != "Unknown"]
+            valid_sector_count = len(valid_sectors)
+            
+            print(f"🎯 FINAL SCREEN VALIDATION:")
+            print(f"   - Ball count: {ball_count}")
+            print(f"   - Valid sectors: {valid_sectors}")
+            print(f"   - Valid sector count: {valid_sector_count}")
+            
+            # Only send LED_RUN if we have exactly 3 balls AND 3 valid sectors
+            if ball_count == 3 and valid_sector_count == 3:
+                print(f"✅ VALIDATION PASSED: {ball_count} balls with {valid_sector_count} valid sectors - sending LED_RUN")
+                if hasattr(self.controller, 'send_esp2_command'):
+                    self.controller.send_esp2_command("LED_RUN")
+                else:
+                    print(f"❌ ERROR: send_esp2_command not available")
+            else:
+                print(f"❌ VALIDATION FAILED: Need exactly 3 balls and 3 valid sectors")
+                print(f"   - Got {ball_count} balls and {valid_sector_count} valid sectors")
+                print(f"   - LED_RUN command NOT sent")
+        else:
+            print(f"❌ VALIDATION FAILED: No final_ball_sectors data available")
+            print(f"   - LED_RUN command NOT sent")
+        
         self.update_ball_display()
 
     def update_ball_display(self):
