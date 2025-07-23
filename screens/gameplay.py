@@ -586,18 +586,32 @@ class GameplayScreen(tk.Frame):
         led_colors = self.controller.led_colors
         ball_sectors = self.detected_sectors
         
-        print(f"[LED BONUS] Comparing LED colors {led_colors} with ball sectors {ball_sectors}")
+        print(f"[LED BONUS] 🎲 MULTIPLIER CHECK:")
+        print(f"[LED BONUS]   - LED Colors from ESP: {led_colors}")
+        print(f"[LED BONUS]   - Ball Landing Sectors: {ball_sectors}")
         
         # Check for matches between LED colors and ball landing sectors
         matches = []
         for i, led_color in enumerate(led_colors):
             if led_color in ball_sectors:
                 matches.append(led_color)
-                print(f"[LED BONUS] ✅ MATCH FOUND: LED Color {i+1} ({led_color}) matches ball sector!")
+                print(f"[LED BONUS] ✅ MATCH #{len(matches)}: LED Color {i+1} ({led_color}) matches ball sector!")
+            else:
+                print(f"[LED BONUS] ❌ NO MATCH: LED Color {i+1} ({led_color}) not found in ball sectors")
         
         if matches:
+            # Calculate multiplier based on number of matches
+            multiplier = len(matches)
+            bonus_points = multiplier * 50  # 50 points per match
+            
+            print(f"[LED BONUS] 🎆 MULTIPLIER ACTIVATED!")
+            print(f"[LED BONUS]   - Matches found: {len(matches)}")
+            print(f"[LED BONUS]   - Matched colors: {matches}")
+            print(f"[LED BONUS]   - Multiplier: x{multiplier}")
+            print(f"[LED BONUS]   - Bonus points: +{bonus_points}")
+            
             # Show multiplier popup
-            self.show_multiplier_popup(matches)
+            self.show_multiplier_popup(matches, multiplier, bonus_points)
             
             # Activate beacon on ESP2
             print(f"[LED BONUS] 🚨 ACTIVATING BEACON - {len(matches)} matches found!")
@@ -605,40 +619,40 @@ class GameplayScreen(tk.Frame):
                 self.controller.send_esp2_command("BEACON_ON")
             
             # Add bonus points for matches
-            bonus_points = len(matches) * 50  # 50 points per match
             self.score += bonus_points
             self.score_label.configure(text=f"SCORE:\n{self.score}")
-            print(f"[LED BONUS] Added {bonus_points} bonus points! New score: {self.score}")
+            print(f"[LED BONUS] Score updated! New total: {self.score}")
         else:
-            print(f"[LED BONUS] No matches found between LED colors and ball sectors")
+            print(f"[LED BONUS] ❌ NO MULTIPLIER - No LED colors match ball sectors")
+            print(f"[LED BONUS]   - Try again next round for bonus points!")
 
-    def show_multiplier_popup(self, matches):
+    def show_multiplier_popup(self, matches, multiplier, bonus_points):
         """Show popup when LED colors match ball landing sectors"""
         import tkinter as tk
         
         # Create popup window
         popup = tk.Toplevel(self.controller)
         popup.title("MULTIPLIER BONUS!")
-        popup.geometry("500x300")
+        popup.geometry("600x400")
         popup.configure(bg="#000000")
         popup.attributes('-topmost', True)
         popup.resizable(False, False)
         
         # Center the popup on screen
         popup.update_idletasks()
-        x = (popup.winfo_screenwidth() // 2) - (500 // 2)
-        y = (popup.winfo_screenheight() // 2) - (300 // 2)
-        popup.geometry(f"500x300+{x}+{y}")
+        x = (popup.winfo_screenwidth() // 2) - (600 // 2)
+        y = (popup.winfo_screenheight() // 2) - (400 // 2)
+        popup.geometry(f"600x400+{x}+{y}")
         
         # Success message
         success_label = tk.Label(
             popup,
             text="🎆 MULTIPLIER BONUS! 🎆",
-            font=("Press Start 2P", 16),
+            font=("Press Start 2P", 18),
             fg="#ff6600",
             bg="#000000"
         )
-        success_label.pack(pady=20)
+        success_label.pack(pady=15)
         
         # Match details
         match_text = f"LED Colors Match Ball Sectors!"
@@ -649,10 +663,10 @@ class GameplayScreen(tk.Frame):
             fg="#ffff00",
             bg="#000000"
         )
-        match_label.pack(pady=10)
+        match_label.pack(pady=8)
         
-        # Show matched colors
-        colors_text = f"Matched: {', '.join(matches)}"
+        # Show matched colors with more detail
+        colors_text = f"Matched Colors: {', '.join(matches)}"
         colors_label = tk.Label(
             popup,
             text=colors_text,
@@ -660,14 +674,23 @@ class GameplayScreen(tk.Frame):
             fg="#00ffff",
             bg="#000000"
         )
-        colors_label.pack(pady=10)
+        colors_label.pack(pady=8)
         
-        # Bonus points
-        bonus_points = len(matches) * 50
+        # Show multiplier
+        multiplier_label = tk.Label(
+            popup,
+            text=f"MULTIPLIER: x{multiplier}",
+            font=("Press Start 2P", 16),
+            fg="#ff00ff",
+            bg="#000000"
+        )
+        multiplier_label.pack(pady=10)
+        
+        # Bonus points (larger text)
         bonus_label = tk.Label(
             popup,
             text=f"+{bonus_points} BONUS POINTS!",
-            font=("Press Start 2P", 18),
+            font=("Press Start 2P", 20),
             fg="#00ff00",
             bg="#000000"
         )
@@ -681,9 +704,20 @@ class GameplayScreen(tk.Frame):
             fg="#ff0000",
             bg="#000000"
         )
-        beacon_label.pack(pady=10)
+        beacon_label.pack(pady=8)
         
-        # Auto-close after 4 seconds
-        popup.after(4000, popup.destroy)
+        # Instructions
+        instruction_label = tk.Label(
+            popup,
+            text="Great prediction! LED colors\nmatched your ball placements!",
+            font=("Press Start 2P", 8),
+            fg="#ffffff",
+            bg="#000000",
+            justify="center"
+        )
+        instruction_label.pack(pady=10)
         
-        print(f"[MULTIPLIER POPUP] Showing popup for {len(matches)} matches (4 second duration)")
+        # Auto-close after 5 seconds (increased from 4)
+        popup.after(5000, popup.destroy)
+        
+        print(f"[MULTIPLIER POPUP] Showing popup: {len(matches)} matches, x{multiplier} multiplier, +{bonus_points} points (5 second duration)")
