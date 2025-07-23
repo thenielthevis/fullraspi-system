@@ -144,8 +144,10 @@ class GameIntroScreen(tk.Frame):
 
 
     def reset_tunnel_selection(self):
+        print("[TUNNEL RESET] Resetting tunnel selection for new game")
         self.tunnel_states = [False] * 5
         self.update_tunnel_graphics()
+        print(f"[TUNNEL RESET] All tunnels reset to: {self.tunnel_states}")
 
     # Remove select_tunnel, selection is now based on touch sensor events
 

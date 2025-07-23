@@ -492,9 +492,22 @@ class FinalScreen(tk.Frame):
                 # 🚨 TRIGGER BEACON AND VISUAL CELEBRATION FOR LED BONUS! 🚨
                 if matched_balls:  # Only trigger beacon for LED bonus, not prediction bonus
                     print(f"🎆 TRIGGERING LED BONUS CELEBRATION!")
+                    print(f"🎆 LED colors {led_colors} matched ball sectors {[ball.split(' (')[1].split(')')[0] for ball in matched_balls]}")
+                    
+                    # Send BEACON_ON to ESP2 when LED colors match ball sectors
                     if hasattr(self.controller, 'send_esp2_command'):
                         self.controller.send_esp2_command("BEACON_ON")
-                        print(f"🚨 BEACON_ON sent to ESP2")
+                        print(f"🚨 BEACON_ON sent to ESP2 - LED colors matched ball positions!")
+                    else:
+                        from TESTCONTROLLER import send_status_cmd
+                        send_status_cmd(self.controller.mqtt_client, "BEACON_ON", topic_override="esp32/control/esp2")
+                        print(f"🚨 BEACON_ON sent to ESP2 via MQTT - LED colors matched ball positions!")
+                    
+                    # Turn off beacon after 10 seconds
+                    self.controller.after(10000, lambda: (
+                        self.controller.send_esp2_command("BEACON_OFF") if hasattr(self.controller, 'send_esp2_command')
+                        else send_status_cmd(self.controller.mqtt_client, "BEACON_OFF", topic_override="esp32/control/esp2")
+                    ))
                     
                     # Store that we have a multiplier bonus for the complete_round function
                     self.controller.has_led_multiplier = True
@@ -586,6 +599,22 @@ class FinalScreen(tk.Frame):
             if matched_balls:
                 print(f"[FINAL ROUND] 🎆 LED MATCHES: {', '.join(matched_balls)}")
                 print(f"[FINAL ROUND] Base points: {base_points}, LED bonus: {total_points - base_points - prediction_bonus}, Prediction bonus: {prediction_bonus}")
+                
+                # 🚨 TRIGGER BEACON FOR LED COLOR MATCHES! 🚨
+                print(f"🎆 LED colors {led_colors} matched ball sectors - activating BEACON!")
+                if hasattr(self.controller, 'send_esp2_command'):
+                    self.controller.send_esp2_command("BEACON_ON")
+                    print(f"🚨 BEACON_ON sent to ESP2 - LED multiplier activated!")
+                else:
+                    from TESTCONTROLLER import send_status_cmd
+                    send_status_cmd(self.controller.mqtt_client, "BEACON_ON", topic_override="esp32/control/esp2")
+                    print(f"🚨 BEACON_ON sent to ESP2 via MQTT - LED multiplier activated!")
+                
+                # Turn off beacon after 10 seconds
+                self.controller.after(10000, lambda: (
+                    self.controller.send_esp2_command("BEACON_OFF") if hasattr(self.controller, 'send_esp2_command')
+                    else send_status_cmd(self.controller.mqtt_client, "BEACON_OFF", topic_override="esp32/control/esp2")
+                ))
             else:
                 print(f"[FINAL ROUND] No LED color matches")
                 

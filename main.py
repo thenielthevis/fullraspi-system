@@ -147,23 +147,11 @@ class ArcadeApp(tk.Tk):
                         if tunnel_name in tunnel_predictions:
                             self.show_tunnel_success_popup(tunnel_name)
                     
-                    if self.proximity_count == 3:
-                        # Send BEACON_ON to ESP2 when all 3 balls have passed through tunnels
-                        if hasattr(self, 'send_esp2_command'):
-                            self.send_esp2_command("BEACON_ON")
-                        else:
-                            send_status_cmd(self.mqtt_client, "BEACON_ON", topic_override="esp32/control/esp2")
-                        print("[PROXIMITY] 3 balls detected - BEACON_ON sent to ESP2")
                     if self.proximity_count >= 3:
                         if hasattr(self, 'send_esp1_command'):
                             self.send_esp1_command("STOP_PROXIMITY")
                         else:
                             send_status_cmd(self.mqtt_client, "STOP_PROXIMITY", topic_override="esp32/control/esp1")
-                        # Turn off beacon after 10 seconds
-                        self.after(10000, lambda: (
-                            self.send_esp2_command("BEACON_OFF") if hasattr(self, 'send_esp2_command')
-                            else send_status_cmd(self.mqtt_client, "BEACON_OFF", topic_override="esp32/control/esp2")
-                        ))
             except Exception as e:
                 print(f"[Proximity Parse Error] {e}")
         set_proximity_callback(on_proximity)
@@ -252,6 +240,10 @@ class ArcadeApp(tk.Tk):
                 sound = pygame.mixer.Sound("assets/sounds/CHOOSETHREE.mp3")
                 sound.set_volume(0.9)
                 sound.play()
+                # Ensure tunnel selection is properly reset
+                if hasattr(frame, 'reset_tunnel_selection'):
+                    frame.reset_tunnel_selection()
+                    print("[MAIN] Explicitly reset tunnel selection for GameIntroScreen")
         except Exception as e:
             print(f"[Screen Sound Error] {e}")
 
@@ -325,10 +317,10 @@ class ArcadeApp(tk.Tk):
         )
         bonus_label.pack(pady=15)
         
-        # Auto-close after 2 seconds
-        popup.after(2000, popup.destroy)
+        # Auto-close after 5 seconds (longer duration for better visibility)
+        popup.after(5000, popup.destroy)
         
-        print(f"[TUNNEL SUCCESS POPUP] Showing popup for {tunnel_name}")
+        print(f"[TUNNEL SUCCESS POPUP] Showing popup for {tunnel_name} (5 second duration)")
 
 if __name__ == "__main__":
     app = ArcadeApp()
