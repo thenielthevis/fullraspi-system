@@ -199,6 +199,14 @@ class ArcadeApp(tk.Tk):
                             gameplay_screen.check_and_show_led_multiplier()
                         else:
                             print(f"🎆 LED colors stored, waiting for balls to settle...")
+                    elif current_frame == "FinalScreen":
+                        # In final screen, trigger LED multiplier check immediately
+                        final_screen = self.frames.get("FinalScreen")
+                        if final_screen and hasattr(final_screen, 'check_and_show_led_multiplier'):
+                            print(f"🎆 Final screen active, triggering LED multiplier check...")
+                            final_screen.check_and_show_led_multiplier()
+                        else:
+                            print(f"🎆 Final screen not ready for LED multiplier check")
                 else:
                     print(f"🎆 Running LED animation")
             except Exception as e:
