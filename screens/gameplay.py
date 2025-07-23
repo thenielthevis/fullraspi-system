@@ -269,106 +269,150 @@ class GameplayScreen(tk.Frame):
                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
 
     def detect_multiple_balls_and_sectors(self, frame, hsv):
-        """Simple and reliable ball detection using basic contour approach"""
+        """Detect multiple balls and return their sectors using advanced separation techniques - EXACT COPY from objectTest.py"""
         detected_sectors = []
-        ball_count = 0
         
-        # Threshold for ball color (using original HSV range)
+        # Threshold for ball color
         mask = cv2.inRange(hsv, self.lower_ball, self.upper_ball)
-        
-        # Debug: Check if any pixels match the color range
-        mask_pixels = cv2.countNonZero(mask)
-        print(f"[DEBUG] Found {mask_pixels} pixels matching ball color")
 
-        # Simple morphological operations to clean up noise
+        # Enhanced morphology to clean noise and separate touching balls
         kernel = np.ones((3, 3), np.uint8)
         mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations=2)
-        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=1)
+        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=2)
 
-        # Find contours - simple and reliable
-        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        # Use distance transform and watershed to separate touching balls
+        dist_transform = cv2.distanceTransform(mask, cv2.DIST_L2, 5)
         
-        if not contours:
-            print("[DEBUG] No contours found")
-            return detected_sectors, ball_count
+        # Find local maxima (ball centers)
+        _, sure_fg = cv2.threshold(dist_transform, 0.4 * dist_transform.max(), 255, 0)
+        sure_fg = np.uint8(sure_fg)
         
-        print(f"[DEBUG] Found {len(contours)} contours")
+        # Find sure background area
+        sure_bg = cv2.dilate(mask, kernel, iterations=3)
+        unknown = cv2.subtract(sure_bg, sure_fg)
         
-        # Sort contours by area (largest first) to get the most prominent balls
-        contours = sorted(contours, key=cv2.contourArea, reverse=True)
+        # Marker labelling
+        _, markers = cv2.connectedComponents(sure_fg)
+        markers = markers + 1
+        markers[unknown == 255] = 0
         
-        valid_balls = []  # Store valid ball detections for overlap checking
+        # Apply watershed
+        frame_copy = frame.copy()
+        markers = cv2.watershed(frame_copy, markers)
         
-        # Process each contour with simple validation
-        for i, contour in enumerate(contours):
-            # Basic area filtering - reasonable ball sizes
-            area = cv2.contourArea(contour)
-            if area < 500 or area > 5000:  # Simple area range
-                print(f"[DEBUG] Contour {i}: area {area} out of range")
-                continue
+        ball_count = 0
+        
+        # Process each detected region
+        for marker_id in range(2, markers.max() + 1):
+            # Create mask for this specific ball
+            ball_mask = np.uint8(markers == marker_id)
             
-            # Get circle properties
+            # Calculate area to filter out noise
+            area = cv2.countNonZero(ball_mask)
+            if area < 300:  # Minimum area for a ball (reduced from 500)
+                continue
+                
+            # Find contour for this ball
+            contours, _ = cv2.findContours(ball_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            if not contours:
+                continue
+                
+            contour = max(contours, key=cv2.contourArea)
             (x, y), radius = cv2.minEnclosingCircle(contour)
             center = (int(x), int(y))
             radius = int(radius)
             
-            # Simple radius validation - typical ball sizes
-            if radius < 12 or radius > 50:  # Conservative radius range
-                print(f"[DEBUG] Contour {i}: radius {radius} out of range")
+            # Additional validation: check if radius is reasonable for a ball
+            if radius < 8 or radius > 100:  # Adjust these values based on your ball size
                 continue
-            
-            # Simple circularity check to ensure it's round-ish
-            perimeter = cv2.arcLength(contour, True)
-            if perimeter == 0:
-                continue
-            circularity = 4 * np.pi * area / (perimeter * perimeter)
-            if circularity < 0.4:  # Must be reasonably circular
-                print(f"[DEBUG] Contour {i}: circularity {circularity:.2f} too low")
-                continue
-            
-            # KEY LOGIC: Circles cannot overlap - check distance between centers
-            is_overlapping = False
-            for existing_center, existing_radius in valid_balls:
-                distance = np.sqrt((center[0] - existing_center[0])**2 + (center[1] - existing_center[1])**2)
-                min_distance = (radius + existing_radius) * 1.2  # Circles + 20% buffer
                 
-                if distance < min_distance:
-                    print(f"[DEBUG] Contour {i}: overlapping with existing ball (distance: {distance:.1f}, min: {min_distance:.1f})")
-                    is_overlapping = True
-                    break
-            
-            if is_overlapping:
-                continue
-            
-            # This is a valid, non-overlapping ball
-            valid_balls.append((center, radius))
             ball_count += 1
             
-            print(f"[DEBUG] ✅ Ball {ball_count}: center={center}, radius={radius}, area={area}, circularity={circularity:.2f}")
+            # Draw colorful ball detection
+            cv2.circle(frame, center, radius, (0, 255, 255), self.VISUAL_CONFIG['ball_circle_thickness'])
+            cv2.circle(frame, center, 5, (0, 0, 255), -1)
             
-            # Get sector for this ball
+            # Add ball number
+            cv2.putText(frame, f"Ball {ball_count}", (center[0] - 25, center[1] - radius - 10), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+
             sector_label = self.get_sector_label(center)
             detected_sectors.append(sector_label)
             
-            # Draw the ball detection
-            cv2.circle(frame, center, radius, (0, 255, 255), self.VISUAL_CONFIG['ball_circle_thickness'])
-            cv2.circle(frame, center, 3, (0, 0, 255), -1)  # Center dot
-            
-            # Add ball number
-            cv2.putText(frame, f"Ball {ball_count}", (center[0] - 15, center[1] - radius - 8), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
-
             # Show sector for each ball
-            cv2.putText(frame, sector_label, (center[0] - 15, center[1] + radius + 15), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.4, 
-                       self.VISUAL_CONFIG['sector_colors'].get(sector_label, (255, 255, 255)), 1)
-            
-            # Stop after finding 3 balls (game requires exactly 3)
-            if ball_count >= 3:
-                print(f"[DEBUG] Reached maximum of 3 balls, stopping detection")
-                break
+            cv2.putText(frame, sector_label, (center[0] - 20, center[1] + radius + 20), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, 
+                       self.VISUAL_CONFIG['sector_colors'].get(sector_label, (255, 255, 255)), 2)
         
-        print(f"[DEBUG] Final result: {ball_count} balls detected in sectors: {detected_sectors}")
+        # Fallback: if watershed didn't find enough balls, try contour-based detection
+        if ball_count < 2:
+            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            if contours:
+                # Sort contours by area (largest first)
+                contours = sorted(contours, key=cv2.contourArea, reverse=True)
+                
+                # Reset for fallback method
+                detected_sectors = []
+                ball_count = 0
+                
+                for contour in contours:
+                    if cv2.contourArea(contour) > 300:  # ignore small noise
+                        # Check if this is likely multiple balls by analyzing the contour
+                        hull = cv2.convexHull(contour)
+                        hull_area = cv2.contourArea(hull)
+                        contour_area = cv2.contourArea(contour)
+                        solidity = float(contour_area) / hull_area
+                        
+                        (x, y), radius = cv2.minEnclosingCircle(contour)
+                        center = (int(x), int(y))
+                        radius = int(radius)
+                        
+                        # If solidity is low, might be multiple touching balls
+                        if solidity < 0.7 and radius > 25:
+                            # Try to estimate number of balls based on area
+                            estimated_ball_area = np.pi * (radius / 1.5) ** 2
+                            num_balls = max(1, int(contour_area / estimated_ball_area))
+                            
+                            # Create multiple detection points for touching balls
+                            moments = cv2.moments(contour)
+                            if moments['m00'] != 0:
+                                cx = int(moments['m10'] / moments['m00'])
+                                cy = int(moments['m01'] / moments['m00'])
+                                
+                                for i in range(min(num_balls, 3)):  # Max 3 balls
+                                    ball_count += 1
+                                    offset_x = (i - 1) * radius // 2
+                                    ball_center = (cx + offset_x, cy)
+                                    
+                                    cv2.circle(frame, ball_center, radius // 2, (0, 255, 255), self.VISUAL_CONFIG['ball_circle_thickness'])
+                                    cv2.circle(frame, ball_center, 5, (0, 0, 255), -1)
+                                    
+                                    cv2.putText(frame, f"Ball {ball_count}", (ball_center[0] - 25, ball_center[1] - radius // 2 - 10), 
+                                               cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+                                    
+                                    sector_label = self.get_sector_label(ball_center)
+                                    detected_sectors.append(sector_label)
+                                    
+                                    cv2.putText(frame, sector_label, (ball_center[0] - 20, ball_center[1] + radius // 2 + 20), 
+                                               cv2.FONT_HERSHEY_SIMPLEX, 0.5, 
+                                               self.VISUAL_CONFIG['sector_colors'].get(sector_label, (255, 255, 255)), 2)
+                        else:
+                            # Single ball
+                            ball_count += 1
+                            
+                            cv2.circle(frame, center, radius, (0, 255, 255), self.VISUAL_CONFIG['ball_circle_thickness'])
+                            cv2.circle(frame, center, 5, (0, 0, 255), -1)
+                            
+                            cv2.putText(frame, f"Ball {ball_count}", (center[0] - 25, center[1] - radius - 10), 
+                                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+
+                            sector_label = self.get_sector_label(center)
+                            detected_sectors.append(sector_label)
+                            
+                            cv2.putText(frame, sector_label, (center[0] - 20, center[1] + radius + 20), 
+                                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, 
+                                       self.VISUAL_CONFIG['sector_colors'].get(sector_label, (255, 255, 255)), 2)
+        
         return detected_sectors, ball_count
 
     def get_sectors_as_string(self, detected_sectors):
