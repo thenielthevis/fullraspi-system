@@ -8,10 +8,15 @@ class EndScreen(tk.Frame):
         super().__init__(parent)
         self.controller = controller
         
+        # Get screen dimensions for responsive background
+        self.update_idletasks()
+        screen_width = controller.winfo_screenwidth()
+        screen_height = controller.winfo_screenheight()
+        
         # Load background image
         img_path = os.path.join("assets", "sp.png")
         original_img = Image.open(img_path)
-        resized_img = original_img.resize((800, 600))
+        resized_img = original_img.resize((screen_width, screen_height), Image.Resampling.LANCZOS)
         self.bg_image = ImageTk.PhotoImage(resized_img)
         background_label = tk.Label(self, image=self.bg_image)
         background_label.place(relwidth=1, relheight=1)
@@ -49,6 +54,17 @@ class EndScreen(tk.Frame):
         )
         self.round_points_label.place(relx=0.5, rely=0.4, anchor="center")
         
+        # Bonus breakdown label
+        self.bonus_breakdown_label = tk.Label(
+            self,
+            text="",
+            font=("Press Start 2P", 10),
+            fg="#FFAA00",
+            bg="#000000",
+            pady=5
+        )
+        self.bonus_breakdown_label.place(relx=0.5, rely=0.48, anchor="center")
+        
         # Total points label (will be updated when screen is shown)
         self.total_points_label = tk.Label(
             self,
@@ -58,7 +74,7 @@ class EndScreen(tk.Frame):
             bg="#000000",
             pady=10
         )
-        self.total_points_label.place(relx=0.5, rely=0.5, anchor="center")
+        self.total_points_label.place(relx=0.5, rely=0.55, anchor="center")
         
         # Status message
         self.status_label = tk.Label(
@@ -69,7 +85,7 @@ class EndScreen(tk.Frame):
             bg="#000000",
             pady=15
         )
-        self.status_label.place(relx=0.5, rely=0.65, anchor="center")
+        self.status_label.place(relx=0.5, rely=0.7, anchor="center")
         
         # Play Again button
         play_again_button = tk.Button(
@@ -85,7 +101,7 @@ class EndScreen(tk.Frame):
             pady=10,
             command=self.play_again
         )
-        play_again_button.place(relx=0.5, rely=0.75, anchor="center")
+        play_again_button.place(relx=0.5, rely=0.8, anchor="center")
         
         # Back to Welcome button
         back_button = tk.Button(
@@ -101,7 +117,7 @@ class EndScreen(tk.Frame):
             pady=8,
             command=lambda: self.controller.show_frame("WelcomeScreen")
         )
-        back_button.place(relx=0.5, rely=0.85, anchor="center")
+        back_button.place(relx=0.5, rely=0.9, anchor="center")
 
     def tkraise(self, aboveThis=None):
         """Override tkraise to update display when screen is shown"""
@@ -120,6 +136,21 @@ class EndScreen(tk.Frame):
         
         # Update round points
         self.round_points_label.config(text=f"Round Points: {round_points}")
+        
+        # Show bonus breakdown if available
+        prediction_bonus = getattr(self.controller, 'prediction_bonus', 0)
+        correct_predictions = getattr(self.controller, 'correct_predictions', 0)
+        
+        bonus_breakdown = ""
+        if prediction_bonus > 0:
+            bonus_breakdown += f"🎯 Tunnel Bonus: {correct_predictions}/3 (+{prediction_bonus})\n"
+        if hasattr(self.controller, 'has_led_multiplier') and self.controller.has_led_multiplier:
+            bonus_breakdown += f"🎆 LED Multiplier Bonus Applied\n"
+        
+        if bonus_breakdown:
+            self.bonus_breakdown_label.config(text=bonus_breakdown.strip())
+        else:
+            self.bonus_breakdown_label.config(text="No bonus points this round")
         
         # Save points to database and get updated total
         if player_uid and round_points > 0:
@@ -173,9 +204,17 @@ class EndScreen(tk.Frame):
             delattr(self.controller, 'final_sectors_string')
         if hasattr(self.controller, 'final_total_points'):
             delattr(self.controller, 'final_total_points')
+        if hasattr(self.controller, 'prediction_bonus'):
+            delattr(self.controller, 'prediction_bonus')
+        if hasattr(self.controller, 'correct_predictions'):
+            delattr(self.controller, 'correct_predictions')
+        if hasattr(self.controller, 'has_led_multiplier'):
+            delattr(self.controller, 'has_led_multiplier')
         
-        # Reset LED colors for new game
+        # Reset LED colors and tunnel predictions for new game
         self.controller.led_colors = []
+        self.controller.tunnel_predictions = []
+        self.controller.tunnel_passages = []  # Reset actual tunnel passage tracking
         
         print("[END SCREEN] Starting new game...")
         self.controller.show_frame("GameIntroScreen")

@@ -17,8 +17,28 @@ class ArcadeApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Arcade Game")
-        self.geometry("800x600")
-        self.resizable(False, False)
+        
+        # Make app fullscreen and always on top
+        self.attributes('-fullscreen', True)
+        self.attributes('-topmost', True)
+        self.configure(bg='#000000')
+        
+        # Hide cursor for kiosk mode (uncomment for production)
+        # self.configure(cursor="none")
+        
+        # Bind Escape key to exit fullscreen (for development)
+        self.bind('<Escape>', self.toggle_fullscreen)
+        self.bind('<F11>', self.toggle_fullscreen)
+        
+        # Bind mouse click and keyboard events to ensure focus
+        self.bind_all('<Button-1>', lambda e: self.focus_force())
+        self.bind_all('<Key>', lambda e: self.focus_force())
+        self.bind_all('<Motion>', lambda e: self.focus_force())
+        
+        # Force focus and bring to front
+        self.focus_force()
+        self.lift()
+        self.grab_set()  # Make window modal to ensure focus
 
         # Initialize pygame mixer
         pygame.mixer.init()
@@ -30,6 +50,10 @@ class ArcadeApp(tk.Tk):
         # Initialize current user info
         self.current_user_uid = None
         self.current_user_name = None
+        
+        # Initialize tunnel predictions for scoring
+        self.tunnel_predictions = []
+        self.tunnel_passages = []  # Track actual tunnel passages from proximity sensors
 
         # Set up MQTT client with a unique client_id to avoid disconnect loops
         unique_id = f"PiControlClient-{uuid.uuid4()}"
@@ -82,8 +106,22 @@ class ArcadeApp(tk.Tk):
         set_touch_callback(on_touch)
 
         # --- PROXIMITY EVENT HANDLING ---
+        # Tunnels are pathways that balls pass through BEFORE landing on color discs
+        # Each tunnel has a proximity sensor that detects when a ball passes through
         self.proximity_count = 0
         self.proximity_last_state = {}
+        self.tunnel_passages = []  # Track which tunnels balls actually passed through
+        
+        # Map proximity sensors to tunnel names
+        # These sensors detect balls passing through tunnels BEFORE they hit the color disc
+        self.sensor_to_tunnel = {
+            "sensor1": "Tunnel A",
+            "sensor2": "Tunnel B", 
+            "sensor3": "Tunnel C",
+            "sensor4": "Tunnel D",
+            "sensor5": "Tunnel E"
+        }
+        
         def on_proximity(data):
             try:
                 sensor, state = data.split(":")
@@ -92,8 +130,23 @@ class ArcadeApp(tk.Tk):
                     return
                 last = self.proximity_last_state[sensor]
                 self.proximity_last_state[sensor] = state
+                
+                # Ball passed through tunnel (falling edge: 1 -> 0)
                 if last == "1" and state == "0":
                     self.proximity_count += 1
+                    
+                    # Record which tunnel the ball passed through
+                    if sensor in self.sensor_to_tunnel:
+                        tunnel_name = self.sensor_to_tunnel[sensor]
+                        self.tunnel_passages.append(tunnel_name)
+                        print(f"🎯 BALL PASSED THROUGH: {tunnel_name} (sensor: {sensor})")
+                        print(f"🎯 TUNNEL PASSAGES SO FAR: {self.tunnel_passages}")
+                        
+                        # Check if this was a correct prediction and show popup
+                        tunnel_predictions = getattr(self, 'tunnel_predictions', [])
+                        if tunnel_name in tunnel_predictions:
+                            self.show_tunnel_success_popup(tunnel_name)
+                    
                     if self.proximity_count == 3:
                         if hasattr(self, 'send_esp2_command'):
                             self.send_esp2_command("NEON_ON")
@@ -145,6 +198,10 @@ class ArcadeApp(tk.Tk):
             frame.grid(row=0, column=0, sticky="nsew")
 
         self.show_frame("WelcomeScreen")
+
+    def get_screen_size(self):
+        """Get current screen dimensions"""
+        return self.winfo_screenwidth(), self.winfo_screenheight()
 
     def play_bgmusic(self):
         if not self.bgmusic_playing:
@@ -204,7 +261,96 @@ class ArcadeApp(tk.Tk):
     def start_rfid(self):
         self.send_esp1_command("START_RFID")
 
+    def toggle_fullscreen(self, event=None):
+        """Toggle fullscreen mode (for development)"""
+        current_state = self.attributes('-fullscreen')
+        self.attributes('-fullscreen', not current_state)
+        
+    def ensure_focus(self):
+        """Ensure the app maintains focus"""
+        self.lift()
+        self.focus_force()
+        self.attributes('-topmost', True)
+        # Schedule periodic focus check (less frequent to avoid interference)
+        self.after(5000, self.ensure_focus)
+
+    def show_tunnel_success_popup(self, tunnel_name):
+        """Show a popup when a ball passes through a correctly predicted tunnel"""
+        import tkinter as tk
+        
+        # Create popup window
+        popup = tk.Toplevel(self)
+        popup.title("Correct Prediction!")
+        popup.geometry("400x200")
+        popup.configure(bg="#000000")
+        popup.attributes('-topmost', True)
+        popup.resizable(False, False)
+        
+        # Center the popup on screen
+        popup.update_idletasks()
+        x = (popup.winfo_screenwidth() // 2) - (400 // 2)
+        y = (popup.winfo_screenheight() // 2) - (200 // 2)
+        popup.geometry(f"400x200+{x}+{y}")
+        
+        # Success message
+        success_label = tk.Label(
+            popup,
+            text="🎯 CORRECT PREDICTION! 🎯",
+            font=("Press Start 2P", 14),
+            fg="#00ff00",
+            bg="#000000"
+        )
+        success_label.pack(pady=20)
+        
+        # Tunnel name
+        tunnel_label = tk.Label(
+            popup,
+            text=f"Ball passed through {tunnel_name}!",
+            font=("Press Start 2P", 12),
+            fg="#00ffff",
+            bg="#000000"
+        )
+        tunnel_label.pack(pady=10)
+        
+        # Bonus points
+        bonus_label = tk.Label(
+            popup,
+            text="+50 BONUS POINTS!",
+            font=("Press Start 2P", 16),
+            fg="#ffff00",
+            bg="#000000"
+        )
+        bonus_label.pack(pady=15)
+        
+        # Auto-close after 2 seconds
+        popup.after(2000, popup.destroy)
+        
+        print(f"[TUNNEL SUCCESS POPUP] Showing popup for {tunnel_name}")
+
 if __name__ == "__main__":
     app = ArcadeApp()
-    app.after(0, lambda: (app.deiconify(), app.lift(), app.focus_force()))
+    
+    # Ensure proper fullscreen initialization
+    app.update_idletasks()  # Process all pending events
+    app.attributes('-fullscreen', True)
+    app.attributes('-topmost', True)
+    app.focus_set()
+    
+    # Start focus maintenance after a delay
+    app.after(1000, app.ensure_focus)
+    
+    # Additional window management for better interaction
+    def on_focus_in(event):
+        app.attributes('-topmost', True)
+    
+    def on_focus_out(event):
+        # Gently regain focus if lost (less aggressive)
+        app.after(500, lambda: app.focus_force())
+    
+    app.bind('<FocusIn>', on_focus_in)
+    app.bind('<FocusOut>', on_focus_out)
+    
+    # Force window to front and start
+    app.lift()
+    app.focus_force()
     app.mainloop()

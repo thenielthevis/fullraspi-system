@@ -37,7 +37,7 @@ class FinalScreen(tk.Frame):
             relief="ridge",
             bd=3
         )
-        results_frame.place(relx=0.5, rely=0.35, anchor="center", width=600, height=200)
+        results_frame.place(relx=0.5, rely=0.35, anchor="center", relwidth=0.8, relheight=0.25)
 
         # Results title
         results_title = tk.Label(
@@ -74,6 +74,16 @@ class FinalScreen(tk.Frame):
             bg="#000000"
         )
         self.points_label.pack(pady=5)
+        
+        # Prediction bonus display
+        self.prediction_label = tk.Label(
+            results_frame,
+            text="",
+            font=("Press Start 2P", 8),
+            fg="#00AAFF",
+            bg="#000000"
+        )
+        self.prediction_label.pack(pady=2)
         # Subtitle
         subtitle = tk.Label(
             self,
@@ -137,6 +147,10 @@ class FinalScreen(tk.Frame):
         # Animation state for LED bonus celebration
         self.animation_active = False
         self.animation_count = 0
+        
+        # LED Bonus Popup
+        self.bonus_popup = None
+        self.popup_active = False
 
     def celebration_animation(self):
         """Animate the points label for LED bonus celebration"""
@@ -159,6 +173,161 @@ class FinalScreen(tk.Frame):
             # End animation with final gold color
             self.points_label.configure(fg="#FFD700", font=("Press Start 2P", 10))
             self.animation_active = False
+
+    def create_bonus_popup(self, matched_balls, bonus_points):
+        """Create a fun animated popup for LED bonus notification"""
+        if self.popup_active:
+            return
+            
+        self.popup_active = True
+        
+        # Create popup frame with exciting styling
+        self.bonus_popup = tk.Frame(
+            self,
+            bg="#FFD700",  # Gold background
+            relief="raised",
+            bd=5
+        )
+        
+        # Calculate popup size and position
+        popup_width = 600
+        popup_height = 400
+        screen_width = self.winfo_width() or 800
+        screen_height = self.winfo_height() or 600
+        
+        x = (screen_width - popup_width) // 2
+        y = (screen_height - popup_height) // 2
+        
+        self.bonus_popup.place(x=x, y=y, width=popup_width, height=popup_height)
+        
+        # Animated title with emoji
+        title_text = "🎆 LED MULTIPLIER BONUS! 🎆"
+        self.popup_title = tk.Label(
+            self.bonus_popup,
+            text=title_text,
+            font=("Press Start 2P", 20),
+            fg="#FF0000",  # Red text
+            bg="#FFD700",  # Gold background
+            pady=20
+        )
+        self.popup_title.pack(pady=10)
+        
+        # Matched balls info
+        matched_text = f"🎯 MATCHED BALLS: {len(matched_balls)}"
+        matched_label = tk.Label(
+            self.bonus_popup,
+            text=matched_text,
+            font=("Press Start 2P", 12),
+            fg="#000000",
+            bg="#FFD700"
+        )
+        matched_label.pack(pady=5)
+        
+        # List matched balls
+        for ball in matched_balls:
+            ball_label = tk.Label(
+                self.bonus_popup,
+                text=f"⚡ {ball}",
+                font=("Press Start 2P", 10),
+                fg="#0000FF",  # Blue text
+                bg="#FFD700"
+            )
+            ball_label.pack(pady=2)
+        
+        # Bonus points display
+        bonus_text = f"💰 BONUS POINTS: +{bonus_points}"
+        bonus_label = tk.Label(
+            self.bonus_popup,
+            text=bonus_text,
+            font=("Press Start 2P", 14),
+            fg="#00AA00",  # Green text
+            bg="#FFD700"
+        )
+        bonus_label.pack(pady=10)
+        
+        # Fun message
+        fun_message = tk.Label(
+            self.bonus_popup,
+            text="🚀 INCREDIBLE! 🚀",
+            font=("Press Start 2P", 16),
+            fg="#FF6600",  # Orange text
+            bg="#FFD700"
+        )
+        fun_message.pack(pady=5)
+        
+        # Auto-close countdown
+        self.countdown_label = tk.Label(
+            self.bonus_popup,
+            text="Auto-closing in 2...",
+            font=("Press Start 2P", 8),
+            fg="#666666",
+            bg="#FFD700"
+        )
+        self.countdown_label.pack(pady=5)
+        
+        # Optional: Add click to close functionality
+        close_hint = tk.Label(
+            self.bonus_popup,
+            text="(Click anywhere to close)",
+            font=("Press Start 2P", 6),
+            fg="#999999",
+            bg="#FFD700"
+        )
+        close_hint.pack(pady=2)
+        
+        # Bind click to close
+        self.bonus_popup.bind("<Button-1>", lambda e: self.close_bonus_popup())
+        for widget in self.bonus_popup.winfo_children():
+            widget.bind("<Button-1>", lambda e: self.close_bonus_popup())
+        
+        # Bring popup to front
+        self.bonus_popup.lift()
+        
+        # Start pulsing animation and countdown
+        self.popup_pulse_count = 0
+        self.popup_countdown = 2
+        self.pulse_popup()
+        self.countdown_popup()
+        
+        print(f"🎉 LED BONUS POPUP CREATED: {matched_balls} earned {bonus_points} bonus points!")
+
+    def pulse_popup(self):
+        """Create pulsing animation effect for the popup"""
+        if not self.popup_active or not self.bonus_popup:
+            return
+            
+        # Pulse the title between different colors
+        colors = ["#FF0000", "#FF6600", "#FFFF00", "#00FF00", "#00FFFF", "#0000FF", "#FF00FF"]
+        color = colors[self.popup_pulse_count % len(colors)]
+        
+        if hasattr(self, 'popup_title'):
+            self.popup_title.configure(fg=color)
+        
+        self.popup_pulse_count += 1
+        
+        # Continue pulsing for 2 seconds
+        if self.popup_pulse_count < 20:  # 20 pulses over 2 seconds
+            self.after(100, self.pulse_popup)
+
+    def countdown_popup(self):
+        """Countdown and auto-close the popup"""
+        if not self.popup_active or not self.bonus_popup:
+            return
+            
+        if self.popup_countdown > 0:
+            self.countdown_label.configure(text=f"Auto-closing in {self.popup_countdown}...")
+            self.popup_countdown -= 1
+            self.after(1000, self.countdown_popup)  # Update every second
+        else:
+            self.close_bonus_popup()
+
+    def close_bonus_popup(self):
+        """Close the bonus popup"""
+        if self.bonus_popup:
+            self.bonus_popup.destroy()
+            self.bonus_popup = None
+        self.popup_active = False
+        print(f"🎉 LED BONUS POPUP CLOSED")
 
     def tkraise(self, aboveThis=None):
         """Override tkraise to start LEDs when screen is shown"""
@@ -267,38 +436,81 @@ class FinalScreen(tk.Frame):
                 )
                 points_label.pack()
             
-            # Create bonus summary text
-            if matched_balls:
-                bonus_text = f"🎆 LED MATCH BONUS! 🎆\n"
-                bonus_text += f"Matched: {', '.join(matched_balls)}\n"
-                if regular_points > 0:
-                    bonus_text += f"Regular: {regular_points}, Bonus: {bonus_points}\n"
-                    bonus_text += f"Total Points: {total_points}"
+            # Check for tunnel prediction bonus
+            tunnel_predictions = getattr(self.controller, 'tunnel_predictions', [])
+            tunnel_passages = getattr(self.controller, 'tunnel_passages', [])
+            prediction_bonus = 0
+            correct_predictions = 0
+            
+            if tunnel_predictions:
+                print(f"🎯 Checking tunnel predictions: {tunnel_predictions} vs actual passages: {tunnel_passages}")
+                
+                # Count how many predictions were correct
+                for predicted_tunnel in tunnel_predictions:
+                    if predicted_tunnel in tunnel_passages:
+                        correct_predictions += 1
+                        prediction_bonus += 50
+                        print(f"✅ CORRECT PREDICTION: {predicted_tunnel}")
+                    else:
+                        print(f"❌ WRONG PREDICTION: {predicted_tunnel} (not in {tunnel_passages})")
+                
+                # Update prediction display
+                if correct_predictions > 0:
+                    prediction_text = f"🎯 Tunnel Bonus: {correct_predictions}/3 correct (+{prediction_bonus} pts)"
+                    self.prediction_label.configure(text=prediction_text, fg="#00AAFF")
                 else:
-                    bonus_text += f"All balls matched LED! Total: {total_points}"
-                points_color = "#FFD700"  # Gold for bonus
-                print(f"💰 LED BONUS SUMMARY:")
+                    self.prediction_label.configure(text="🎯 Tunnel Bonus: 0/3 correct (no bonus)", fg="#666666")
+            else:
+                self.prediction_label.configure(text="🎯 No tunnel predictions", fg="#666666")
+            
+            # Add prediction bonus to total
+            total_points += prediction_bonus
+            
+            # Create bonus summary text
+            if matched_balls or prediction_bonus > 0:
+                bonus_text = ""
+                if matched_balls:
+                    bonus_text += f"🎆 LED MATCH! {', '.join(matched_balls)}\n"
+                    if regular_points > 0:
+                        bonus_text += f"Regular: {regular_points}, LED Bonus: {bonus_points}\n"
+                    else:
+                        bonus_text += f"All balls LED matched! LED Bonus: {bonus_points}\n"
+                
+                if prediction_bonus > 0:
+                    bonus_text += f"🎯 Tunnel Bonus: +{prediction_bonus}\n"
+                
+                bonus_text += f"TOTAL POINTS: {total_points}"
+                points_color = "#FFD700"  # Gold for any bonus
+                
+                print(f"💰 BONUS SUMMARY:")
                 print(f"   - Matched balls: {matched_balls}")
                 print(f"   - Regular points: {regular_points}")
-                print(f"   - Bonus points: {bonus_points}")
+                print(f"   - LED bonus points: {bonus_points}")
+                print(f"   - Prediction bonus: {prediction_bonus}")
                 print(f"   - Total points: {total_points}")
                 
                 # 🚨 TRIGGER BEACON AND VISUAL CELEBRATION FOR LED BONUS! 🚨
-                print(f"🎆 TRIGGERING LED BONUS CELEBRATION!")
-                if hasattr(self.controller, 'send_esp2_command'):
-                    self.controller.send_esp2_command("BEACON_ON")
-                    print(f"🚨 BEACON_ON sent to ESP2")
-                
-                # Store that we have a multiplier bonus for the complete_round function
-                self.controller.has_led_multiplier = True
-                self.controller.led_bonus_balls = matched_balls
-                
-                # Update points label to flash/animate for bonus
-                self.celebration_animation()
+                if matched_balls:  # Only trigger beacon for LED bonus, not prediction bonus
+                    print(f"🎆 TRIGGERING LED BONUS CELEBRATION!")
+                    if hasattr(self.controller, 'send_esp2_command'):
+                        self.controller.send_esp2_command("BEACON_ON")
+                        print(f"🚨 BEACON_ON sent to ESP2")
+                    
+                    # Store that we have a multiplier bonus for the complete_round function
+                    self.controller.has_led_multiplier = True
+                    self.controller.led_bonus_balls = matched_balls
+                    
+                    # 🎉 CREATE EXCITING POPUP NOTIFICATION! 🎉
+                    self.create_bonus_popup(matched_balls, bonus_points)
+                    
+                    # Update points label to flash/animate for bonus
+                    self.celebration_animation()
             else:
-                bonus_text = f"Total Points Earned: {total_points}\n(No LED color matches)"
+                bonus_text = f"Total Points Earned: {total_points}"
+                if prediction_bonus == 0 and tunnel_predictions:
+                    bonus_text += "\n(No bonuses earned)"
                 points_color = "#00ff00"
-                print(f"   - No LED matches found")
+                print(f"   - No bonuses earned")
                 self.controller.has_led_multiplier = False
             
             # Update total points display
@@ -313,11 +525,12 @@ class FinalScreen(tk.Frame):
             self.points_label.configure(text="Points: 0")
 
     def complete_round(self):
-        # Calculate and display final points with individual ball LED matching bonus
+        # Calculate and display final points with individual ball LED matching bonus + tunnel prediction bonus
         if hasattr(self.controller, 'final_ball_sectors') and self.controller.final_ball_sectors:
             sectors = self.controller.final_ball_sectors
             led_colors = getattr(self.controller, 'led_colors', [])
             led_colors_set = set(led_colors) if led_colors else set()
+            tunnel_predictions = getattr(self.controller, 'tunnel_predictions', [])
             
             base_points = 0
             total_points = 0
@@ -338,24 +551,58 @@ class FinalScreen(tk.Frame):
                 
                 total_points += ball_final_points
             
+            # 🎯 CALCULATE TUNNEL PREDICTION BONUS
+            tunnel_predictions = getattr(self.controller, 'tunnel_predictions', [])
+            tunnel_passages = getattr(self.controller, 'tunnel_passages', [])
+            prediction_bonus = 0
+            correct_predictions = 0
+            
+            if tunnel_predictions:
+                print(f"[TUNNEL PREDICTIONS] Player predicted: {tunnel_predictions}")
+                print(f"[TUNNEL PASSAGES] Actual passages: {tunnel_passages}")
+                
+                # Check each prediction against actual tunnel passages
+                for predicted_tunnel in tunnel_predictions:
+                    if predicted_tunnel in tunnel_passages:
+                        correct_predictions += 1
+                        # Award 50 bonus points per correct prediction
+                        prediction_bonus += 50
+                        print(f"[PREDICTION MATCH] ✅ {predicted_tunnel} - +50 bonus points!")
+                    else:
+                        print(f"[PREDICTION MISS] ❌ {predicted_tunnel} - no bonus")
+                
+                if correct_predictions > 0:
+                    total_points += prediction_bonus
+                    print(f"[PREDICTION BONUS] {correct_predictions}/3 correct predictions = +{prediction_bonus} bonus points!")
+                else:
+                    print(f"[PREDICTION RESULT] No correct predictions - no bonus")
+            else:
+                print(f"[PREDICTION ERROR] No tunnel predictions found!")
+            
             sectors_string = getattr(self.controller, 'final_sectors_string', 'Unknown')
             print(f"[FINAL ROUND] Ball positions: {sectors_string}")
             print(f"[FINAL ROUND] LED colors: {led_colors}")
             
             if matched_balls:
                 print(f"[FINAL ROUND] 🎆 LED MATCHES: {', '.join(matched_balls)}")
-                print(f"[FINAL ROUND] Base points: {base_points}, Final total: {total_points}")
+                print(f"[FINAL ROUND] Base points: {base_points}, LED bonus: {total_points - base_points - prediction_bonus}, Prediction bonus: {prediction_bonus}")
             else:
-                print(f"[FINAL ROUND] No LED color matches - Total points: {total_points}")
+                print(f"[FINAL ROUND] No LED color matches")
                 
-            # Store final points in controller for end screen
+            print(f"[FINAL ROUND] TOTAL FINAL SCORE: {total_points} points")
+                
+            # Store final points in controller for end screen (including prediction bonus)
             self.controller.final_total_points = total_points
+            self.controller.prediction_bonus = prediction_bonus
+            self.controller.correct_predictions = correct_predictions
             
             # 🎯 HANDLE POST-GAME SEQUENCE: STEPPER & ULTRASONIC
             self.start_post_game_sequence(matched_balls)
         else:
             print("[FINAL ROUND] No ball position data available")
             self.controller.final_total_points = 0
+            self.controller.prediction_bonus = 0
+            self.controller.correct_predictions = 0
             self.start_post_game_sequence([])  # No bonus, but still run sequence
 
     def start_post_game_sequence(self, matched_balls):

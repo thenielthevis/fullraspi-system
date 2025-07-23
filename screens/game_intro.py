@@ -25,13 +25,22 @@ class GameIntroScreen(tk.Frame):
         title.place(relx=0.5, rely=0.15, anchor="center")
         subtitle = tk.Label(
             self,
-            text="TOUCH TO SELECT 3/5 TUNNELS",
-            font=("Press Start 2P", 12),
+            text="PREDICT WHICH TUNNELS YOUR BALLS WILL PASS THROUGH",
+            font=("Press Start 2P", 10),
             fg="#ffffff",
             bg="#000000",
             pady=10
         )
         subtitle.place(relx=0.5, rely=0.25, anchor="center")
+        info_label = tk.Label(
+            self,
+            text="EACH CORRECT PREDICTION = +50 BONUS POINTS",
+            font=("Press Start 2P", 8),
+            fg="#00ff00",
+            bg="#000000",
+            pady=5
+        )
+        info_label.place(relx=0.5, rely=0.32, anchor="center")
         # Tunnel shape and touch sensor logic
         self.tunnels = ["Tunnel A", "Tunnel B", "Tunnel C", "Tunnel D", "Tunnel E"]
         self.tunnel_canvas = tk.Canvas(self, width=800, height=250, bg="black", highlightthickness=0)
@@ -145,6 +154,11 @@ class GameIntroScreen(tk.Frame):
         selected = [self.tunnels[i] for i, lit in enumerate(self.tunnel_states) if lit]
         if len(selected) == 3:
             print(f"[Simulated] Confirmed tunnels: {selected}")
+            
+            # 🎯 STORE TUNNEL PREDICTIONS IN CONTROLLER FOR FINAL SCORE
+            self.controller.tunnel_predictions = selected.copy()
+            print(f"🎯 TUNNEL PREDICTIONS STORED: {self.controller.tunnel_predictions}")
+            
             # Prompt user to pick up the ball
             from tkinter import messagebox
             messagebox.showinfo("Get Ready!", "Please pick up the ball from the container.")
