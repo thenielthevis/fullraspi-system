@@ -142,9 +142,16 @@ class ArcadeApp(tk.Tk):
                         print(f"🎯 BALL PASSED THROUGH: {tunnel_name} (sensor: {sensor})")
                         print(f"🎯 TUNNEL PASSAGES SO FAR: {self.tunnel_passages}")
                         
-                        # Check if this was a correct prediction and show popup
+                        # Check if this was a correct prediction and award points + show popup
                         tunnel_predictions = getattr(self, 'tunnel_predictions', [])
                         if tunnel_name in tunnel_predictions:
+                            # Award immediate points for correct tunnel prediction
+                            gameplay_screen = self.frames.get("GameplayScreen")
+                            if gameplay_screen:
+                                gameplay_screen.score += 50  # 50 points for correct tunnel prediction
+                                gameplay_screen.score_label.configure(text=f"SCORE:\n{gameplay_screen.score}")
+                                print(f"[TUNNEL BONUS] +50 points for correct prediction! New score: {gameplay_screen.score}")
+                            
                             self.show_tunnel_success_popup(tunnel_name)
                     
                     if self.proximity_count >= 3:

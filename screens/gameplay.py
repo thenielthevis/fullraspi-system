@@ -328,9 +328,9 @@ class GameplayScreen(tk.Frame):
                 
             ball_count += 1
             
-            # Draw colorful ball detection
+            # Draw colorful ball detection (only outer circle, no inner dot)
             cv2.circle(frame, center, radius, (0, 255, 255), self.VISUAL_CONFIG['ball_circle_thickness'])
-            cv2.circle(frame, center, 5, (0, 0, 255), -1)
+            # Removed the small inner circle: cv2.circle(frame, center, 5, (0, 0, 255), -1)
             
             # Add ball number
             cv2.putText(frame, f"Ball {ball_count}", (center[0] - 25, center[1] - radius - 10), 
@@ -385,7 +385,7 @@ class GameplayScreen(tk.Frame):
                                     ball_center = (cx + offset_x, cy)
                                     
                                     cv2.circle(frame, ball_center, radius // 2, (0, 255, 255), self.VISUAL_CONFIG['ball_circle_thickness'])
-                                    cv2.circle(frame, ball_center, 5, (0, 0, 255), -1)
+                                    # Removed small inner circle: cv2.circle(frame, ball_center, 5, (0, 0, 255), -1)
                                     
                                     cv2.putText(frame, f"Ball {ball_count}", (ball_center[0] - 25, ball_center[1] - radius // 2 - 10), 
                                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
@@ -401,7 +401,7 @@ class GameplayScreen(tk.Frame):
                             ball_count += 1
                             
                             cv2.circle(frame, center, radius, (0, 255, 255), self.VISUAL_CONFIG['ball_circle_thickness'])
-                            cv2.circle(frame, center, 5, (0, 0, 255), -1)
+                            # Removed small inner circle: cv2.circle(frame, center, 5, (0, 0, 255), -1)
                             
                             cv2.putText(frame, f"Ball {ball_count}", (center[0] - 25, center[1] - radius - 10), 
                                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
@@ -550,6 +550,9 @@ class GameplayScreen(tk.Frame):
         print(f"[SECTORS] Final ball positions: {sectors_string}")
         print(f"[SCORE] Successful guesses: {self.successful_guesses}")
         
+        # Check for LED color multiplier bonus and activate beacon
+        self.check_led_multiplier_bonus()
+        
         # Store the detected sectors in the controller for final screen display
         self.controller.final_ball_sectors = self.detected_sectors.copy()
         self.controller.final_sectors_string = sectors_string
@@ -565,3 +568,118 @@ class GameplayScreen(tk.Frame):
         self.cleanup_camera()
             
         self.controller.show_frame("FinalScreen")
+
+    def check_led_multiplier_bonus(self):
+        """Check if LED colors match ball landing sectors and show multiplier popup + activate beacon"""
+        if not hasattr(self.controller, 'led_colors') or not self.controller.led_colors:
+            print("[LED BONUS] No LED colors available for comparison")
+            return
+        
+        if not self.detected_sectors:
+            print("[LED BONUS] No detected ball sectors for comparison")
+            return
+        
+        led_colors = self.controller.led_colors
+        ball_sectors = self.detected_sectors
+        
+        print(f"[LED BONUS] Comparing LED colors {led_colors} with ball sectors {ball_sectors}")
+        
+        # Check for matches between LED colors and ball landing sectors
+        matches = []
+        for i, led_color in enumerate(led_colors):
+            if led_color in ball_sectors:
+                matches.append(led_color)
+                print(f"[LED BONUS] ✅ MATCH FOUND: LED Color {i+1} ({led_color}) matches ball sector!")
+        
+        if matches:
+            # Show multiplier popup
+            self.show_multiplier_popup(matches)
+            
+            # Activate beacon on ESP2
+            print(f"[LED BONUS] 🚨 ACTIVATING BEACON - {len(matches)} matches found!")
+            if hasattr(self.controller, 'send_esp2_command'):
+                self.controller.send_esp2_command("BEACON_ON")
+            
+            # Add bonus points for matches
+            bonus_points = len(matches) * 50  # 50 points per match
+            self.score += bonus_points
+            self.score_label.configure(text=f"SCORE:\n{self.score}")
+            print(f"[LED BONUS] Added {bonus_points} bonus points! New score: {self.score}")
+        else:
+            print(f"[LED BONUS] No matches found between LED colors and ball sectors")
+
+    def show_multiplier_popup(self, matches):
+        """Show popup when LED colors match ball landing sectors"""
+        import tkinter as tk
+        
+        # Create popup window
+        popup = tk.Toplevel(self.controller)
+        popup.title("MULTIPLIER BONUS!")
+        popup.geometry("500x300")
+        popup.configure(bg="#000000")
+        popup.attributes('-topmost', True)
+        popup.resizable(False, False)
+        
+        # Center the popup on screen
+        popup.update_idletasks()
+        x = (popup.winfo_screenwidth() // 2) - (500 // 2)
+        y = (popup.winfo_screenheight() // 2) - (300 // 2)
+        popup.geometry(f"500x300+{x}+{y}")
+        
+        # Success message
+        success_label = tk.Label(
+            popup,
+            text="🎆 MULTIPLIER BONUS! 🎆",
+            font=("Press Start 2P", 16),
+            fg="#ff6600",
+            bg="#000000"
+        )
+        success_label.pack(pady=20)
+        
+        # Match details
+        match_text = f"LED Colors Match Ball Sectors!"
+        match_label = tk.Label(
+            popup,
+            text=match_text,
+            font=("Press Start 2P", 12),
+            fg="#ffff00",
+            bg="#000000"
+        )
+        match_label.pack(pady=10)
+        
+        # Show matched colors
+        colors_text = f"Matched: {', '.join(matches)}"
+        colors_label = tk.Label(
+            popup,
+            text=colors_text,
+            font=("Press Start 2P", 10),
+            fg="#00ffff",
+            bg="#000000"
+        )
+        colors_label.pack(pady=10)
+        
+        # Bonus points
+        bonus_points = len(matches) * 50
+        bonus_label = tk.Label(
+            popup,
+            text=f"+{bonus_points} BONUS POINTS!",
+            font=("Press Start 2P", 18),
+            fg="#00ff00",
+            bg="#000000"
+        )
+        bonus_label.pack(pady=15)
+        
+        # Beacon notification
+        beacon_label = tk.Label(
+            popup,
+            text="🚨 BEACON ACTIVATED! 🚨",
+            font=("Press Start 2P", 14),
+            fg="#ff0000",
+            bg="#000000"
+        )
+        beacon_label.pack(pady=10)
+        
+        # Auto-close after 4 seconds
+        popup.after(4000, popup.destroy)
+        
+        print(f"[MULTIPLIER POPUP] Showing popup for {len(matches)} matches (4 second duration)")
