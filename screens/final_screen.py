@@ -360,7 +360,7 @@ class FinalScreen(tk.Frame):
                 if hasattr(self.controller, 'send_esp2_command'):
                     try:
                         sound = pygame.mixer.Sound("assets/sounds/led_run.mp3")
-                        sound.set_volume(0.9)
+                        sound.set_volume(1.0)
                         sound.play()
                     except Exception as e:
                         print(f"[LED_RUN Sound Error] {e}")
@@ -368,7 +368,7 @@ class FinalScreen(tk.Frame):
                 else:
                     try:
                         sound = pygame.mixer.Sound("assets/sounds/led_run.mp3")
-                        sound.set_volume(0.9)
+                        sound.set_volume(1.0)
                         sound.play()
                     except Exception as e:
                         print(f"[LED_RUN Sound Error] {e}")
@@ -549,7 +549,7 @@ class FinalScreen(tk.Frame):
             if hasattr(self.controller, 'send_esp2_command'):
                 try:
                     sound = pygame.mixer.Sound("assets/sounds/Win_Beacon.mp3")
-                    sound.set_volume(1)
+                    sound.set_volume(1.0)
                     sound.play()
                 except Exception as e:
                     print(f"[BEACON_ON Sound Error] {e}")
@@ -731,7 +731,7 @@ class FinalScreen(tk.Frame):
                 if hasattr(self.controller, 'send_esp2_command'):
                     try:
                         sound = pygame.mixer.Sound("assets/sounds/Win_Beacon.mp3")
-                        sound.set_volume(0.9)
+                        sound.set_volume(1.0)
                         sound.play()
                     except Exception as e:
                         print(f"[BEACON_ON Sound Error] {e}")
@@ -740,7 +740,7 @@ class FinalScreen(tk.Frame):
                 else:
                     try:
                         sound = pygame.mixer.Sound("assets/sounds/Win_Beacon.mp3")
-                        sound.set_volume(0.9)
+                        sound.set_volume(1.0)
                         sound.play()
                     except Exception as e:
                         print(f"[BEACON_ON Sound Error] {e}")
