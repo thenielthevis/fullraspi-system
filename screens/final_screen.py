@@ -387,18 +387,12 @@ class FinalScreen(tk.Frame):
             
             # Create individual ball color displays
             total_points = 0
-            base_points = 0  # Track base points for bonus calculation
             led_colors = getattr(self.controller, 'led_colors', [])
             
             print(f"🎆 LED Colors for matching: {led_colors}")
             print(f"🎯 Ball sectors detected: {sectors}")
             
-            # Check for LED color matches (any ball color that appears in LED colors gets 2x bonus)
-            led_colors_set = set(led_colors) if led_colors else set()
-            matched_balls = []
-            bonus_points = 0
-            regular_points = 0
-            
+            # Display ball colors without LED multiplier check (that happens later when LED colors arrive)
             for i, sector in enumerate(sectors):
                 print(f"   - Processing ball {i+1}: {sector}")
                 ball_frame = tk.Frame(self.ball_colors_frame, bg="#000000")
@@ -414,16 +408,8 @@ class FinalScreen(tk.Frame):
                 )
                 ball_label.pack()
                 
-                # Color indicator
+                # Color indicator (no LED matching yet)
                 color_display = self.display_colors.get(sector, '#FFFFFF')
-                
-                # Check if this ball color matches any LED color
-                is_led_match = sector in led_colors_set
-                if is_led_match:
-                    matched_balls.append(f"Ball {i+1} ({sector})")
-                
-                # Add border effect for matched balls
-                border_color = "#FFD700" if is_led_match else color_display  # Gold border for matches
                 color_label = tk.Label(
                     ball_frame,
                     text=f"  {sector}  ",
@@ -431,34 +417,19 @@ class FinalScreen(tk.Frame):
                     fg="#000000",
                     bg=color_display,
                     relief="raised",
-                    bd=4 if is_led_match else 2,
-                    highlightbackground=border_color,
-                    highlightthickness=2 if is_led_match else 0
+                    bd=2
                 )
                 color_label.pack(pady=2)
                 
-                # Points for this ball
+                # Base points only (no LED bonus yet)
                 base_ball_points = self.color_points.get(sector, 0)
-                if is_led_match:
-                    actual_ball_points = base_ball_points * 2  # 2x bonus for LED match
-                    bonus_points += actual_ball_points
-                    points_text = f"{base_ball_points}×2 = {actual_ball_points}"
-                    points_color = "#FFD700"  # Gold for bonus points
-                    print(f"     🎆 LED MATCH! {sector} in LED colors - {base_ball_points} × 2 = {actual_ball_points}")
-                else:
-                    actual_ball_points = base_ball_points
-                    regular_points += actual_ball_points
-                    points_text = f"{actual_ball_points} pts"
-                    points_color = "#00ff00"
-                
-                base_points += base_ball_points
-                total_points += actual_ball_points
+                total_points += base_ball_points
                 
                 points_label = tk.Label(
                     ball_frame,
-                    text=points_text,
+                    text=f"{base_ball_points} pts",
                     font=("Press Start 2P", 7),
-                    fg=points_color,
+                    fg="#00ff00",
                     bg="#000000"
                 )
                 points_label.pack()
@@ -493,67 +464,14 @@ class FinalScreen(tk.Frame):
             # Add prediction bonus to total
             total_points += prediction_bonus
             
-            # Create bonus summary text
-            if matched_balls or prediction_bonus > 0:
-                bonus_text = ""
-                if matched_balls:
-                    bonus_text += f"🎆 LED MATCH! {', '.join(matched_balls)}\n"
-                    if regular_points > 0:
-                        bonus_text += f"Regular: {regular_points}, LED Bonus: {bonus_points}\n"
-                    else:
-                        bonus_text += f"All balls LED matched! LED Bonus: {bonus_points}\n"
-                
-                if prediction_bonus > 0:
-                    bonus_text += f"🎯 Tunnel Bonus: +{prediction_bonus}\n"
-                
-                bonus_text += f"TOTAL POINTS: {total_points}"
-                points_color = "#FFD700"  # Gold for any bonus
-                
-                print(f"💰 BONUS SUMMARY:")
-                print(f"   - Matched balls: {matched_balls}")
-                print(f"   - Regular points: {regular_points}")
-                print(f"   - LED bonus points: {bonus_points}")
-                print(f"   - Prediction bonus: {prediction_bonus}")
-                print(f"   - Total points: {total_points}")
-                
-                # 🚨 TRIGGER BEACON AND VISUAL CELEBRATION FOR LED BONUS! 🚨
-                if matched_balls:  # Only trigger beacon for LED bonus, not prediction bonus
-                    print(f"🎆 TRIGGERING LED BONUS CELEBRATION!")
-                    print(f"🎆 LED colors {led_colors} matched ball sectors {[ball.split(' (')[1].split(')')[0] for ball in matched_balls]}")
-                    
-                    # Send BEACON_ON to ESP2 when LED colors match ball sectors
-                    if hasattr(self.controller, 'send_esp2_command'):
-                        self.controller.send_esp2_command("BEACON_ON")
-                        print(f"🚨 BEACON_ON sent to ESP2 - LED colors matched ball positions!")
-                    else:
-                        from TESTCONTROLLER import send_status_cmd
-                        send_status_cmd(self.controller.mqtt_client, "BEACON_ON", topic_override="esp32/control/esp2")
-                        print(f"🚨 BEACON_ON sent to ESP2 via MQTT - LED colors matched ball positions!")
-                    
-                    # Turn off beacon after 10 seconds
-                    self.controller.after(10000, lambda: (
-                        self.controller.send_esp2_command("BEACON_OFF") if hasattr(self.controller, 'send_esp2_command')
-                        else send_status_cmd(self.controller.mqtt_client, "BEACON_OFF", topic_override="esp32/control/esp2")
-                    ))
-                    
-                    # Store that we have a multiplier bonus for the complete_round function
-                    self.controller.has_led_multiplier = True
-                    self.controller.led_bonus_balls = matched_balls
-                    
-                    # 🎉 CREATE EXCITING POPUP NOTIFICATION! 🎉
-                    self.create_bonus_popup(matched_balls, bonus_points)
-                    
-                    # Update points label to flash/animate for bonus
-                    self.celebration_animation()
-            else:
-                bonus_text = f"Total Points Earned: {total_points}"
-                if prediction_bonus == 0 and tunnel_predictions:
-                    bonus_text += "\n(No bonuses earned)"
-                points_color = "#00ff00"
-                print(f"   - No bonuses earned")
-                self.controller.has_led_multiplier = False
+            # Display basic points information (LED bonus will be applied later)
+            bonus_text = f"Base Points: {total_points}"
+            if prediction_bonus > 0:
+                bonus_text += f"\n🎯 Tunnel Bonus: +{prediction_bonus}"
+            bonus_text += f"\nTotal: {total_points}"
+            points_color = "#00ff00"
             
-            # Update total points display
+            # Update total points display (LED bonus will update this later)
             self.points_label.configure(
                 text=bonus_text,
                 fg=points_color
@@ -563,6 +481,162 @@ class FinalScreen(tk.Frame):
             # No ball data available
             self.sectors_display.configure(text="No ball position data available")
             self.points_label.configure(text="Points: 0")
+
+    def check_and_show_led_multiplier(self):
+        """Check for LED multiplier matches when LED colors arrive from ESP32"""
+        print(f"🎆 LED MULTIPLIER CHECK TRIGGERED!")
+        
+        if not hasattr(self.controller, 'final_ball_sectors') or not self.controller.final_ball_sectors:
+            print(f"❌ No ball sectors available for LED matching")
+            return
+            
+        sectors = self.controller.final_ball_sectors
+        led_colors = getattr(self.controller, 'led_colors', [])
+        
+        print(f"🎯 CHECKING LED MATCHES:")
+        print(f"   - Ball sectors: {sectors}")
+        print(f"   - LED colors: {led_colors}")
+        
+        if not led_colors:
+            print(f"❌ No LED colors received yet")
+            return
+            
+        # Check for LED color matches
+        led_colors_set = set(led_colors)
+        matched_balls = []
+        total_bonus_points = 0
+        base_points = 0
+        
+        # Calculate base points and find matches
+        for i, sector in enumerate(sectors):
+            base_ball_points = self.color_points.get(sector, 0)
+            base_points += base_ball_points
+            
+            if sector in led_colors_set:
+                matched_balls.append(f"Ball {i+1} ({sector})")
+                # LED match gives 2x points, so bonus is the base points
+                total_bonus_points += base_ball_points
+                print(f"   ✅ MATCH: Ball {i+1} ({sector}) matches LED colors!")
+        
+        if matched_balls:
+            print(f"🎆 LED MULTIPLIER ACTIVATED!")
+            print(f"   - Matched balls: {matched_balls}")
+            print(f"   - Bonus points: +{total_bonus_points}")
+            
+            # Update the display with LED bonus
+            self.update_display_with_led_bonus(matched_balls, total_bonus_points, base_points)
+            
+            # Trigger beacon
+            if hasattr(self.controller, 'send_esp2_command'):
+                self.controller.send_esp2_command("BEACON_ON")
+                print(f"🚨 BEACON_ON sent to ESP2 - LED multiplier activated!")
+            
+            # Turn off beacon after 10 seconds
+            self.controller.after(10000, lambda: (
+                self.controller.send_esp2_command("BEACON_OFF") if hasattr(self.controller, 'send_esp2_command')
+                else None
+            ))
+            
+            # Store LED multiplier info
+            self.controller.has_led_multiplier = True
+            self.controller.led_bonus_balls = matched_balls
+            
+            # Show popup
+            self.create_bonus_popup(matched_balls, total_bonus_points)
+            self.celebration_animation()
+        else:
+            print(f"❌ No LED matches found")
+            self.controller.has_led_multiplier = False
+
+    def update_display_with_led_bonus(self, matched_balls, bonus_points, base_points):
+        """Update the display to show LED bonus information"""
+        # Clear and recreate ball displays with LED bonus highlighting
+        for widget in self.ball_colors_frame.winfo_children():
+            widget.destroy()
+            
+        sectors = self.controller.final_ball_sectors
+        led_colors = getattr(self.controller, 'led_colors', [])
+        led_colors_set = set(led_colors)
+        
+        total_points = 0
+        
+        # Recreate ball displays with LED highlighting
+        for i, sector in enumerate(sectors):
+            ball_frame = tk.Frame(self.ball_colors_frame, bg="#000000")
+            ball_frame.pack(side=tk.LEFT, padx=10, pady=5)
+            
+            # Ball number label
+            ball_label = tk.Label(
+                ball_frame,
+                text=f"Ball {i+1}:",
+                font=("Press Start 2P", 8),
+                fg="#ffffff",
+                bg="#000000"
+            )
+            ball_label.pack()
+            
+            # Color indicator with LED match highlighting
+            color_display = self.display_colors.get(sector, '#FFFFFF')
+            is_led_match = sector in led_colors_set
+            
+            color_label = tk.Label(
+                ball_frame,
+                text=f"  {sector}  ",
+                font=("Press Start 2P", 10),
+                fg="#000000",
+                bg=color_display,
+                relief="raised",
+                bd=4 if is_led_match else 2,
+                highlightbackground="#FFD700" if is_led_match else color_display,
+                highlightthickness=2 if is_led_match else 0
+            )
+            color_label.pack(pady=2)
+            
+            # Points with LED bonus
+            base_ball_points = self.color_points.get(sector, 0)
+            if is_led_match:
+                actual_points = base_ball_points * 2
+                points_text = f"{base_ball_points}×2 = {actual_points}"
+                points_color = "#FFD700"  # Gold
+            else:
+                actual_points = base_ball_points
+                points_text = f"{actual_points} pts"
+                points_color = "#00ff00"
+                
+            total_points += actual_points
+            
+            points_label = tk.Label(
+                ball_frame,
+                text=points_text,
+                font=("Press Start 2P", 7),
+                fg=points_color,
+                bg="#000000"
+            )
+            points_label.pack()
+        
+        # Update total points display
+        tunnel_predictions = getattr(self.controller, 'tunnel_predictions', [])
+        tunnel_passages = getattr(self.controller, 'tunnel_passages', [])
+        prediction_bonus = 0
+        
+        if tunnel_predictions:
+            for predicted_tunnel in tunnel_predictions:
+                if predicted_tunnel in tunnel_passages:
+                    prediction_bonus += 50
+        
+        total_points += prediction_bonus
+        
+        # Create updated bonus text
+        bonus_text = f"🎆 LED MATCH! {', '.join(matched_balls)}\n"
+        bonus_text += f"Base: {base_points}, LED Bonus: +{bonus_points}\n"
+        if prediction_bonus > 0:
+            bonus_text += f"🎯 Tunnel Bonus: +{prediction_bonus}\n"
+        bonus_text += f"TOTAL: {total_points}"
+        
+        self.points_label.configure(
+            text=bonus_text,
+            fg="#FFD700"  # Gold
+        )
 
     def complete_round(self):
         # Calculate and display final points with individual ball LED matching bonus + tunnel prediction bonus
