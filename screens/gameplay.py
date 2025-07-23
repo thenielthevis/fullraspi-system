@@ -224,6 +224,7 @@ class GameplayScreen(tk.Frame):
         self.detected_sectors = []
         self.ball_count = 0
         self.auto_scored = False
+        self.led_multiplier_info = None  # Reset LED multiplier info
         self.balls_count_label.configure(text="Balls: 0")
         self.sectors_label.configure(text="Sectors:\nNone")
         self.settling_label.configure(text="")
@@ -481,6 +482,9 @@ class GameplayScreen(tk.Frame):
                     self.settling_label.configure(text="Balls settled! Ready for final round!")
                     print(f"✅ Balls have settled! Final count validation...")
                     print(f"🎯 Final ball positions: {sectors_string}")
+                    
+                    # Check for LED multiplier immediately when balls settle
+                    self.check_and_show_led_multiplier()
             
             elif len(valid_sectors) != 3:
                 # Reset if ball count changes
@@ -543,7 +547,9 @@ class GameplayScreen(tk.Frame):
                 self.after(100, self.update_camera)  # Retry after a longer delay
 
     def ball_scored(self):
-        self.score += 10
+        # Basic gameplay points
+        base_points = 10
+        self.score += base_points
         self.successful_guesses += 1
         self.score_label.configure(text=f"SCORE:\n{self.score}")
         self.guesses_label.configure(text=f"GUESSES:\n{self.successful_guesses}")
@@ -554,8 +560,44 @@ class GameplayScreen(tk.Frame):
         print(f"[SECTORS] Final ball positions: {sectors_string}")
         print(f"[SCORE] Successful guesses: {self.successful_guesses}")
         
-        # Check for LED color multiplier bonus and activate beacon
-        self.check_led_multiplier_bonus()
+        # Initialize points breakdown
+        points_breakdown = {
+            'base_points': base_points,
+            'tunnel_bonus': 0,
+            'led_multiplier_bonus': 0,
+            'beacon_activated': False,
+            'tunnel_matches': 0,
+            'led_matches': 0,
+            'led_colors': [],
+            'matched_colors': []
+        }
+        
+        # Check for tunnel prediction bonus (proximity sensor points)
+        tunnel_bonus = self.calculate_tunnel_bonus()
+        points_breakdown['tunnel_bonus'] = tunnel_bonus
+        if tunnel_bonus > 0:
+            self.score += tunnel_bonus
+            self.score_label.configure(text=f"SCORE:\n{self.score}")
+        
+        # Check for LED color multiplier bonus (use stored info from when balls settled)
+        if hasattr(self, 'led_multiplier_info') and self.led_multiplier_info:
+            led_bonus_info = self.led_multiplier_info
+            points_breakdown['led_multiplier_bonus'] = led_bonus_info['bonus_points']
+            points_breakdown['beacon_activated'] = led_bonus_info['beacon_activated']
+            points_breakdown['led_matches'] = led_bonus_info['matches_count']
+            points_breakdown['led_colors'] = led_bonus_info['led_colors']
+            points_breakdown['matched_colors'] = led_bonus_info['matched_colors']
+            
+            # Add the bonus points to score
+            self.score += led_bonus_info['bonus_points']
+            self.score_label.configure(text=f"SCORE:\n{self.score}")
+            print(f"[GAME COMPLETE] Added LED multiplier bonus: +{led_bonus_info['bonus_points']}")
+        else:
+            print("[GAME COMPLETE] No LED multiplier bonus to apply")
+        
+        # Store breakdown for end screen
+        self.controller.points_breakdown = points_breakdown
+        self.controller.final_total_points = self.score
         
         # Store the detected sectors in the controller for final screen display
         self.controller.final_ball_sectors = self.detected_sectors.copy()
@@ -567,21 +609,123 @@ class GameplayScreen(tk.Frame):
         print(f"   - Sectors stored: {self.controller.final_ball_sectors}")
         print(f"   - String stored: {self.controller.final_sectors_string}")
         print(f"   - Length of sectors: {len(self.detected_sectors)}")
+        print(f"   - Points breakdown: {points_breakdown}")
+        print(f"   - Final total points: {self.score}")
         
         # Clean up camera before transitioning
         self.cleanup_camera()
             
         self.controller.show_frame("FinalScreen")
 
+    def calculate_tunnel_bonus(self):
+        """Calculate bonus points from tunnel predictions"""
+        if not hasattr(self.controller, 'tunnel_predictions') or not hasattr(self.controller, 'tunnel_passages'):
+            print("[TUNNEL BONUS] No tunnel predictions or passages available")
+            return 0
+        
+        predictions = self.controller.tunnel_predictions
+        passages = self.controller.tunnel_passages
+        
+        print(f"[TUNNEL BONUS] 🎯 TUNNEL PREDICTION CHECK:")
+        print(f"[TUNNEL BONUS]   - Player predictions: {predictions}")
+        print(f"[TUNNEL BONUS]   - Actual passages: {passages}")
+        
+        if not predictions or not passages:
+            print("[TUNNEL BONUS] ❌ No predictions or passages to compare")
+            return 0
+        
+        # Count correct predictions
+        correct_predictions = 0
+        for prediction in predictions:
+            if prediction in passages:
+                correct_predictions += 1
+                print(f"[TUNNEL BONUS] ✅ CORRECT: Predicted tunnel {prediction}")
+            else:
+                print(f"[TUNNEL BONUS] ❌ WRONG: Predicted tunnel {prediction} (not used)")
+        
+        # Calculate bonus (25 points per correct prediction)
+        bonus_points = correct_predictions * 25
+        
+        print(f"[TUNNEL BONUS] 🎯 TUNNEL BONUS SUMMARY:")
+        print(f"[TUNNEL BONUS]   - Correct predictions: {correct_predictions}/{len(predictions)}")
+        print(f"[TUNNEL BONUS]   - Bonus points: +{bonus_points}")
+        
+        # Store for end screen breakdown
+        self.controller.correct_predictions = correct_predictions
+        self.controller.prediction_bonus = bonus_points
+        
+        return bonus_points
+
+    def check_and_show_led_multiplier(self):
+        """Check LED multiplier when balls settle and show popup immediately"""
+        if not hasattr(self.controller, 'led_colors') or not self.controller.led_colors:
+            print("[LED MULTIPLIER] No LED colors available for checking multiplier")
+            return
+        
+        if not self.detected_sectors:
+            print("[LED MULTIPLIER] No detected ball sectors for multiplier check")
+            return
+        
+        led_colors = self.controller.led_colors
+        ball_sectors = self.detected_sectors
+        
+        print(f"[LED MULTIPLIER] 🎲 IMMEDIATE MULTIPLIER CHECK:")
+        print(f"[LED MULTIPLIER]   - LED Colors from ESP: {led_colors}")
+        print(f"[LED MULTIPLIER]   - Ball Landing Sectors: {ball_sectors}")
+        
+        # Check for matches between LED colors and ball landing sectors
+        matches = []
+        for i, led_color in enumerate(led_colors):
+            if led_color in ball_sectors:
+                matches.append(led_color)
+                print(f"[LED MULTIPLIER] ✅ MATCH #{len(matches)}: LED Color {i+1} ({led_color}) matches ball sector!")
+            else:
+                print(f"[LED MULTIPLIER] ❌ NO MATCH: LED Color {i+1} ({led_color}) not found in ball sectors")
+        
+        if matches:
+            # Calculate multiplier based on number of matches
+            multiplier = len(matches)
+            bonus_points = multiplier * 50  # 50 points per match
+            
+            print(f"[LED MULTIPLIER] 🎆 MULTIPLIER DETECTED!")
+            print(f"[LED MULTIPLIER]   - Matches found: {len(matches)}")
+            print(f"[LED MULTIPLIER]   - Matched colors: {matches}")
+            print(f"[LED MULTIPLIER]   - Multiplier: x{multiplier}")
+            print(f"[LED MULTIPLIER]   - Bonus points: +{bonus_points}")
+            
+            # Show multiplier popup immediately
+            self.show_multiplier_popup(matches, multiplier, bonus_points)
+            
+            # Activate beacon on ESP2
+            print(f"[LED MULTIPLIER] 🚨 ACTIVATING BEACON - {len(matches)} matches found!")
+            if hasattr(self.controller, 'send_esp2_command'):
+                self.controller.send_esp2_command("BEACON_ON")
+            
+            # Store multiplier info for later use in ball_scored
+            self.led_multiplier_info = {
+                'bonus_points': bonus_points,
+                'beacon_activated': True,
+                'matches_count': len(matches),
+                'led_colors': led_colors.copy(),
+                'matched_colors': matches.copy(),
+                'multiplier': multiplier
+            }
+            
+            print(f"[LED MULTIPLIER] Multiplier info stored for final scoring")
+        else:
+            print(f"[LED MULTIPLIER] ❌ NO MULTIPLIER - No LED colors match ball sectors")
+            print(f"[LED MULTIPLIER]   - No bonus points this round")
+            self.led_multiplier_info = None
+
     def check_led_multiplier_bonus(self):
         """Check if LED colors match ball landing sectors and show multiplier popup + activate beacon"""
         if not hasattr(self.controller, 'led_colors') or not self.controller.led_colors:
             print("[LED BONUS] No LED colors available for comparison")
-            return
+            return None
         
         if not self.detected_sectors:
             print("[LED BONUS] No detected ball sectors for comparison")
-            return
+            return None
         
         led_colors = self.controller.led_colors
         ball_sectors = self.detected_sectors
@@ -610,21 +754,31 @@ class GameplayScreen(tk.Frame):
             print(f"[LED BONUS]   - Multiplier: x{multiplier}")
             print(f"[LED BONUS]   - Bonus points: +{bonus_points}")
             
-            # Show multiplier popup
-            self.show_multiplier_popup(matches, multiplier, bonus_points)
-            
             # Activate beacon on ESP2
+            beacon_activated = False
             print(f"[LED BONUS] 🚨 ACTIVATING BEACON - {len(matches)} matches found!")
             if hasattr(self.controller, 'send_esp2_command'):
                 self.controller.send_esp2_command("BEACON_ON")
+                beacon_activated = True
             
             # Add bonus points for matches
             self.score += bonus_points
             self.score_label.configure(text=f"SCORE:\n{self.score}")
             print(f"[LED BONUS] Score updated! New total: {self.score}")
+            
+            # Return bonus information for breakdown
+            return {
+                'bonus_points': bonus_points,
+                'beacon_activated': beacon_activated,
+                'matches_count': len(matches),
+                'led_colors': led_colors.copy(),
+                'matched_colors': matches.copy(),
+                'multiplier': multiplier
+            }
         else:
             print(f"[LED BONUS] ❌ NO MULTIPLIER - No LED colors match ball sectors")
             print(f"[LED BONUS]   - Try again next round for bonus points!")
+            return None
 
     def show_multiplier_popup(self, matches, multiplier, bonus_points):
         """Show popup when LED colors match ball landing sectors"""
