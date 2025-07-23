@@ -71,9 +71,28 @@ def on_message(_client, _userdata, msg):
             if rfid_callback:
                 rfid_callback(packet['data'])
         elif typ == "COIN":
-            print(f"[COIN]   {packet['data']}")
-            if coin_callback:
+            print(f"[COIN]   Raw packet: {packet}")
+            print(f"[COIN]   Data: {packet['data']}")
+            print(f"[COIN]   Data type: {type(packet['data'])}")
+            
+            # Only trigger callback if coin was actually inserted (data should be 1 or True)
+            coin_inserted = False
+            try:
+                # Handle different possible data formats
+                coin_data = packet['data']
+                if coin_data == 1 or coin_data == "1" or coin_data is True or coin_data == "INSERTED":
+                    coin_inserted = True
+                    print(f"[COIN]   ✅ Valid coin insertion detected")
+                else:
+                    print(f"[COIN]   ❌ Invalid coin data (not insertion): {coin_data}")
+            except:
+                print(f"[COIN]   ❌ Error parsing coin data: {packet.get('data', 'NO_DATA')}")
+            
+            if coin_inserted and coin_callback:
+                print(f"[COIN]   🪙 Triggering coin callback")
                 coin_callback()
+            elif coin_callback:
+                print(f"[COIN]   🚫 Coin callback NOT triggered - invalid data")
         elif typ == "TOUCH":
             print(f"[TOUCH]  Sensor index: {packet['data']}")
             if touch_callback:
