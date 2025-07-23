@@ -241,6 +241,13 @@ class ArcadeApp(tk.Tk):
             except Exception as e:
                 print(f"[Music Error] {e}")
 
+    def stop_bgmusic(self):
+        try:
+            pygame.mixer.music.stop()
+            self.bgmusic_playing = False
+        except Exception as e:
+            print(f"[Music Stop Error] {e}")
+
     def play_register_first_sound(self):
         try:
             pygame.mixer.music.stop()
@@ -254,7 +261,7 @@ class ArcadeApp(tk.Tk):
     def play_coin_insert_sound(self):
         try:
             sound = pygame.mixer.Sound("assets/sounds/CoinInsert.mp3")
-            sound.set_volume(0.9)
+            sound.set_volume(1)
             sound.play()
         except Exception as e:
             print(f"[Coin Insert Sound Error] {e}")
@@ -269,14 +276,12 @@ class ArcadeApp(tk.Tk):
         # 🔊 Screen-specific audio cues
         try:
             if screen_name == "InstructionScreen":
-                pygame.mixer.music.stop()
-                self.bgmusic_playing = False
+                self.play_bgmusic()
                 sound = pygame.mixer.Sound("assets/sounds/howtoplay.mp3")
                 sound.set_volume(0.9)
                 sound.play()
             elif screen_name == "GameIntroScreen":
-                pygame.mixer.music.stop()
-                self.bgmusic_playing = False
+                self.play_bgmusic()
                 sound = pygame.mixer.Sound("assets/sounds/CHOOSETHREE.mp3")
                 sound.set_volume(0.9)
                 sound.play()
@@ -284,6 +289,8 @@ class ArcadeApp(tk.Tk):
                 if hasattr(frame, 'reset_tunnel_selection'):
                     frame.reset_tunnel_selection()
                     print("[MAIN] Explicitly reset tunnel selection for GameIntroScreen")
+            elif screen_name == "WelcomeScreen":
+                self.stop_bgmusic()
         except Exception as e:
             print(f"[Screen Sound Error] {e}")
 

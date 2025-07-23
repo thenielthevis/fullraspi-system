@@ -1,11 +1,18 @@
 import tkinter as tk
 from PIL import Image, ImageTk
 import os
+import pygame
 
 class FinalScreen(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
         self.controller = controller
+        # Ensure pygame mixer is initialized for sound effects
+        try:
+            if not pygame.mixer.get_init():
+                pygame.mixer.init()
+        except Exception as e:
+            print(f"[Pygame Mixer Init Error] {e}")
 
         # Don't send LED command here - wait for screen to be shown
 
@@ -351,8 +358,20 @@ class FinalScreen(tk.Frame):
             if ball_count == 3 and valid_sector_count == 3:
                 print(f"✅ VALIDATION PASSED: {ball_count} balls with {valid_sector_count} valid sectors - sending LED_RUN")
                 if hasattr(self.controller, 'send_esp2_command'):
+                    try:
+                        sound = pygame.mixer.Sound("assets/sounds/led_run.mp3")
+                        sound.set_volume(0.9)
+                        sound.play()
+                    except Exception as e:
+                        print(f"[LED_RUN Sound Error] {e}")
                     self.controller.send_esp2_command("LED_RUN")
                 else:
+                    try:
+                        sound = pygame.mixer.Sound("assets/sounds/led_run.mp3")
+                        sound.set_volume(0.9)
+                        sound.play()
+                    except Exception as e:
+                        print(f"[LED_RUN Sound Error] {e}")
                     print(f"❌ ERROR: send_esp2_command not available")
             else:
                 print(f"❌ VALIDATION FAILED: Need exactly 3 balls and 3 valid sectors")
@@ -528,6 +547,12 @@ class FinalScreen(tk.Frame):
             
             # Trigger beacon
             if hasattr(self.controller, 'send_esp2_command'):
+                try:
+                    sound = pygame.mixer.Sound("assets/sounds/Win_Beacon.mp3")
+                    sound.set_volume(1)
+                    sound.play()
+                except Exception as e:
+                    print(f"[BEACON_ON Sound Error] {e}")
                 self.controller.send_esp2_command("BEACON_ON")
                 print(f"🚨 BEACON_ON sent to ESP2 - LED multiplier activated!")
             
@@ -704,9 +729,21 @@ class FinalScreen(tk.Frame):
                 # 🚨 TRIGGER BEACON FOR LED COLOR MATCHES! 🚨
                 print(f"🎆 LED colors {led_colors} matched ball sectors - activating BEACON!")
                 if hasattr(self.controller, 'send_esp2_command'):
+                    try:
+                        sound = pygame.mixer.Sound("assets/sounds/Win_Beacon.mp3")
+                        sound.set_volume(0.9)
+                        sound.play()
+                    except Exception as e:
+                        print(f"[BEACON_ON Sound Error] {e}")
                     self.controller.send_esp2_command("BEACON_ON")
                     print(f"🚨 BEACON_ON sent to ESP2 - LED multiplier activated!")
                 else:
+                    try:
+                        sound = pygame.mixer.Sound("assets/sounds/Win_Beacon.mp3")
+                        sound.set_volume(0.9)
+                        sound.play()
+                    except Exception as e:
+                        print(f"[BEACON_ON Sound Error] {e}")
                     from TESTCONTROLLER import send_status_cmd
                     send_status_cmd(self.controller.mqtt_client, "BEACON_ON", topic_override="esp32/control/esp2")
                     print(f"🚨 BEACON_ON sent to ESP2 via MQTT - LED multiplier activated!")
