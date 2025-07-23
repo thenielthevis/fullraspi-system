@@ -276,15 +276,16 @@ class GameplayScreen(tk.Frame):
         mask = cv2.inRange(hsv, self.lower_ball, self.upper_ball)
 
         # Enhanced morphology to clean noise and separate touching balls
-        kernel = np.ones((3, 3), np.uint8)
-        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations=2)
+        kernel = np.ones((5, 5), np.uint8)  # Larger kernel for better noise reduction
+        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations=3)  # More iterations
         mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=2)
 
         # Use distance transform and watershed to separate touching balls
         dist_transform = cv2.distanceTransform(mask, cv2.DIST_L2, 5)
         
-        # Find local maxima (ball centers)
-        _, sure_fg = cv2.threshold(dist_transform, 0.4 * dist_transform.max(), 255, 0)
+        # Find local maxima (ball centers) - More conservative threshold
+        threshold_value = 0.6 * dist_transform.max()  # Increased from 0.4 to 0.6
+        _, sure_fg = cv2.threshold(dist_transform, threshold_value, 255, 0)
         sure_fg = np.uint8(sure_fg)
         
         # Find sure background area
@@ -301,15 +302,16 @@ class GameplayScreen(tk.Frame):
         markers = cv2.watershed(frame_copy, markers)
         
         ball_count = 0
+        valid_detections = []  # Track valid detections to prevent duplicates
         
-        # Process each detected region
+        # Process each detected region with stricter validation
         for marker_id in range(2, markers.max() + 1):
             # Create mask for this specific ball
             ball_mask = np.uint8(markers == marker_id)
             
-            # Calculate area to filter out noise
+            # Calculate area to filter out noise - More restrictive
             area = cv2.countNonZero(ball_mask)
-            if area < 300:  # Minimum area for a ball from objectTest.py
+            if area < 500 or area > 5000:  # Increased minimum area and added maximum
                 continue
                 
             # Find contour for this ball
@@ -322,9 +324,30 @@ class GameplayScreen(tk.Frame):
             center = (int(x), int(y))
             radius = int(radius)
             
-            # Additional validation: check if radius is reasonable for a ball (from objectTest.py)
-            if radius < 8 or radius > 100:  # Exact values from objectTest.py
+            # More strict radius validation for balls
+            if radius < 12 or radius > 80:  # Tighter radius range
                 continue
+            
+            # Additional shape validation - check circularity
+            perimeter = cv2.arcLength(contour, True)
+            if perimeter == 0:
+                continue
+            circularity = 4 * np.pi * area / (perimeter * perimeter)
+            if circularity < 0.5:  # Must be reasonably circular
+                continue
+            
+            # Check for minimum distance between detections to avoid duplicates
+            is_duplicate = False
+            for existing_center, existing_radius in valid_detections:
+                distance = np.sqrt((center[0] - existing_center[0])**2 + (center[1] - existing_center[1])**2)
+                if distance < (radius + existing_radius) * 0.8:  # 80% overlap threshold
+                    is_duplicate = True
+                    break
+            
+            if is_duplicate:
+                continue
+            
+            valid_detections.append((center, radius))
                 
             ball_count += 1
             
@@ -344,8 +367,8 @@ class GameplayScreen(tk.Frame):
                        cv2.FONT_HERSHEY_SIMPLEX, 0.3, 
                        self.VISUAL_CONFIG['sector_colors'].get(sector_label, (255, 255, 255)), 1)
         
-        # Fallback: if watershed didn't find enough balls, try contour-based detection
-        if ball_count < 2:
+        # Fallback: if watershed didn't find enough balls, try contour-based detection with strict filtering
+        if ball_count == 0:
             contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             if contours:
                 # Sort contours by area (largest first)
@@ -354,28 +377,56 @@ class GameplayScreen(tk.Frame):
                 # Reset for fallback method
                 detected_sectors = []
                 ball_count = 0
+                valid_detections = []
                 
-                for contour in contours:
-                    if cv2.contourArea(contour) > 300:  # Exact area threshold from objectTest.py
-                        (x, y), radius = cv2.minEnclosingCircle(contour)
-                        center = (int(x), int(y))
-                        radius = int(radius)
-                        
-                        if radius >= 8 and radius <= 100:  # Exact radius validation from objectTest.py
-                            ball_count += 1
-                            
-                            cv2.circle(frame, center, radius, (0, 255, 255), self.VISUAL_CONFIG['ball_circle_thickness'])
-                            cv2.circle(frame, center, 3, (0, 0, 255), -1)
-                            
-                            cv2.putText(frame, f"Ball {ball_count}", (center[0] - 15, center[1] - radius - 8), 
-                                       cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 255, 255), 1)
+                for contour in contours[:3]:  # Maximum 3 balls
+                    area = cv2.contourArea(contour)
+                    if area < 500 or area > 5000:  # Same strict area filtering
+                        continue
+                    
+                    # Get contour properties
+                    (x, y), radius = cv2.minEnclosingCircle(contour)
+                    center = (int(x), int(y))
+                    radius = int(radius)
+                    
+                    # Strict radius validation
+                    if radius < 12 or radius > 80:
+                        continue
+                    
+                    # Circularity check
+                    perimeter = cv2.arcLength(contour, True)
+                    if perimeter == 0:
+                        continue
+                    circularity = 4 * np.pi * area / (perimeter * perimeter)
+                    if circularity < 0.5:
+                        continue
+                    
+                    # Check for duplicates
+                    is_duplicate = False
+                    for existing_center, existing_radius in valid_detections:
+                        distance = np.sqrt((center[0] - existing_center[0])**2 + (center[1] - existing_center[1])**2)
+                        if distance < (radius + existing_radius) * 0.8:
+                            is_duplicate = True
+                            break
+                    
+                    if is_duplicate:
+                        continue
+                    
+                    valid_detections.append((center, radius))
+                    ball_count += 1
+                    
+                    cv2.circle(frame, center, radius, (0, 255, 255), self.VISUAL_CONFIG['ball_circle_thickness'])
+                    cv2.circle(frame, center, 3, (0, 0, 255), -1)
+                    
+                    cv2.putText(frame, f"Ball {ball_count}", (center[0] - 15, center[1] - radius - 8), 
+                               cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 255, 255), 1)
 
-                            sector_label = self.get_sector_label(center)
-                            detected_sectors.append(sector_label)
-                            
-                            cv2.putText(frame, sector_label, (center[0] - 15, center[1] + radius + 15), 
-                                       cv2.FONT_HERSHEY_SIMPLEX, 0.3, 
-                                       self.VISUAL_CONFIG['sector_colors'].get(sector_label, (255, 255, 255)), 1)
+                    sector_label = self.get_sector_label(center)
+                    detected_sectors.append(sector_label)
+                    
+                    cv2.putText(frame, sector_label, (center[0] - 15, center[1] + radius + 15), 
+                               cv2.FONT_HERSHEY_SIMPLEX, 0.3, 
+                               self.VISUAL_CONFIG['sector_colors'].get(sector_label, (255, 255, 255)), 1)
         
         return detected_sectors, ball_count
 
@@ -455,24 +506,27 @@ class GameplayScreen(tk.Frame):
                 self.balls_settled = False
                 self.settling_label.configure(text="")
             
-            # Check for game completion
+            # Check for game completion with enhanced validation
             if len(valid_sectors) == 3 and self.balls_settled:
                 print(f"🎮 GAME COMPLETION CHECK:")
-                print(f"   - Valid sectors: {len(valid_sectors)} (need 3)")
-                print(f"   - Balls settled: {self.balls_settled}")
+                print(f"   - Valid sectors: {len(valid_sectors)} (need 3) ✅")
+                print(f"   - Balls settled: {self.balls_settled} ✅")
                 print(f"   - Current sectors: {valid_sectors}")
+                print(f"   - Ball count detected: {self.ball_count}")
                 print(f"   - Auto-scored attribute exists: {hasattr(self, 'auto_scored')}")
                 if hasattr(self, 'auto_scored'):
                     print(f"   - Auto-scored value: {self.auto_scored}")
                 
-                self.settling_label.configure(text="GAME COMPLETE! Press button below!")
+                self.settling_label.configure(text="🎯 3 BALLS DETECTED! Auto-advancing to results...")
+                
                 # Auto-trigger ball scored after settling
-                if not hasattr(self, 'auto_scored'):
-                    print(f"🚀 TRIGGERING AUTO SCORE...")
+                if not hasattr(self, 'auto_scored') or not self.auto_scored:
+                    print(f"🚀 TRIGGERING AUTO SCORE - All conditions met!")
                     self.auto_scored = True
-                    self.after(1000, self.ball_scored)  # Auto-trigger after 1 second
+                    # Reduce delay for faster progression
+                    self.after(1500, self.ball_scored)  # 1.5 seconds for final confirmation
                 else:
-                    print(f"⚠️ Auto-score already triggered, waiting...")
+                    print(f"⚠️ Auto-score already triggered, waiting for transition...")
 
             # Draw colorful sector lines and labels
             self.draw_sectors(frame)
