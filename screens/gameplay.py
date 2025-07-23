@@ -213,6 +213,7 @@ class GameplayScreen(tk.Frame):
 
     def tkraise(self, aboveThis=None):
         """Override tkraise to start camera when screen is shown"""
+        self.reset_detection()
         super().tkraise(aboveThis)
         if not self.camera_running:
             self.init_camera()
