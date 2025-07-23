@@ -61,7 +61,7 @@ class ArcadeApp(tk.Tk):
         from TESTCONTROLLER import on_connect, on_message
         self.mqtt_client.on_connect = on_connect
         self.mqtt_client.on_message = on_message
-        self.mqtt_client.connect("192.168.76.34", 1883, keepalive=60)
+        self.mqtt_client.connect("192.168.5.34", 1883, keepalive=60)
         self.mqtt_client.loop_start()
 
         # Register callback for RFID
@@ -148,18 +148,21 @@ class ArcadeApp(tk.Tk):
                             self.show_tunnel_success_popup(tunnel_name)
                     
                     if self.proximity_count == 3:
+                        # Send BEACON_ON to ESP2 when all 3 balls have passed through tunnels
                         if hasattr(self, 'send_esp2_command'):
-                            self.send_esp2_command("NEON_ON")
+                            self.send_esp2_command("BEACON_ON")
                         else:
-                            send_status_cmd(self.mqtt_client, "NEON_ON", topic_override="esp32/control/esp2")
+                            send_status_cmd(self.mqtt_client, "BEACON_ON", topic_override="esp32/control/esp2")
+                        print("[PROXIMITY] 3 balls detected - BEACON_ON sent to ESP2")
                     if self.proximity_count >= 3:
                         if hasattr(self, 'send_esp1_command'):
                             self.send_esp1_command("STOP_PROXIMITY")
                         else:
                             send_status_cmd(self.mqtt_client, "STOP_PROXIMITY", topic_override="esp32/control/esp1")
+                        # Turn off beacon after 10 seconds
                         self.after(10000, lambda: (
-                            self.send_esp2_command("NEON_OFF") if hasattr(self, 'send_esp2_command')
-                            else send_status_cmd(self.mqtt_client, "NEON_OFF", topic_override="esp32/control/esp2")
+                            self.send_esp2_command("BEACON_OFF") if hasattr(self, 'send_esp2_command')
+                            else send_status_cmd(self.mqtt_client, "BEACON_OFF", topic_override="esp32/control/esp2")
                         ))
             except Exception as e:
                 print(f"[Proximity Parse Error] {e}")
