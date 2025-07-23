@@ -280,3 +280,5 @@ class EndScreen(tk.Frame):
         
         print("[END SCREEN] Starting new game...")
         self.controller.show_frame("GameIntroScreen")
+        if hasattr(self.controller, 'play_bgmusic'):
+            self.controller.play_bgmusic()
