@@ -137,6 +137,41 @@ class AddCreditScreen(tk.Frame):
             self.coin_status_label.config(text="Coin inserted! Credit updated.")
 
     def play_game(self):
+        # Check if user has sufficient credits before allowing gameplay
+        if not self.current_uid:
+            from tkinter import messagebox
+            messagebox.showwarning("No User", "Please scan RFID first!")
+            return
+            
+        # Get current credit from database
+        conn = sqlite3.connect('arpi.sqlite')
+        cursor = conn.cursor()
+        cursor.execute("SELECT credit FROM users WHERE uid = ?", (self.current_uid,))
+        row = cursor.fetchone()
+        conn.close()
+        
+        if not row or row[0] <= 0:
+            # No credits available - show options
+            from tkinter import messagebox
+            result = messagebox.askyesno(
+                "No Credits", 
+                "You have 0 credits!\n\nWould you like to insert coins to play?\n\nYes = Insert Coins\nNo = Return to Welcome"
+            )
+            if result:
+                # User wants to insert coins
+                self.start_coin_mode()
+                return
+            else:
+                # User wants to exit
+                self.controller.show_frame("WelcomeScreen")
+                return
+        
+        # Deduct 1 credit for gameplay
+        from DbSetup import add_credit
+        add_credit(self.current_uid, -1)  # Subtract 1 credit
+        self.set_uid(self.current_uid)  # Refresh display
+        print(f"[CREDIT] 1 credit deducted for gameplay. Player: {self.current_uid}")
+        
         if self.coin_mode:
             if hasattr(self.controller, 'send_esp2_command'):
                 self.controller.send_esp2_command("STOP_COIN")

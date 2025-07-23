@@ -8,9 +8,15 @@ class WelcomeScreen(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
         self.controller = controller
+        
+        # Get screen dimensions for responsive background
+        self.update_idletasks()
+        screen_width = controller.winfo_screenwidth()
+        screen_height = controller.winfo_screenheight()
+        
         img_path = os.path.join("assets", "space.png")
         original_img = Image.open(img_path)
-        resized_img = original_img.resize((800, 600))
+        resized_img = original_img.resize((screen_width, screen_height), Image.Resampling.LANCZOS)
         self.bg_image = ImageTk.PhotoImage(resized_img)
         background_label = tk.Label(self, image=self.bg_image)
         background_label.place(relwidth=1, relheight=1)
