@@ -464,11 +464,11 @@ class GameplayScreen(tk.Frame):
             print(f"[DETECTION DEBUG] Ball count: {ball_count}, Valid sectors: {len(valid_sectors)}, Sectors: {valid_sectors}")
             print(f"[DETECTION DEBUG] Balls settled: {self.balls_settled}, First detection time: {self.first_detection_time}")
             
-            # Handle settling time logic from objectTest.py
-            if len(valid_sectors) == 3 and not self.balls_settled:
+            # Handle settling time logic from objectTest.py - REQUIRE EXACTLY 3 BALLS AND 3 VALID SECTORS
+            if ball_count == 3 and len(valid_sectors) == 3 and not self.balls_settled:
                 if self.first_detection_time is None:
                     self.first_detection_time = time.time()
-                    print(f"🕒 3 balls detected! Waiting {self.SETTLING_TIME} seconds for balls to settle...")
+                    print(f"🕒 3 balls and 3 valid sectors detected! Waiting {self.SETTLING_TIME} seconds for balls to settle...")
                 
                 # Calculate remaining time
                 elapsed_time = time.time() - self.first_detection_time
@@ -479,18 +479,17 @@ class GameplayScreen(tk.Frame):
                     self.settling_label.configure(text=f"Settling... {remaining_time:.1f}s")
                 else:
                     self.balls_settled = True
-                    self.settling_label.configure(text="Balls settled! Ready for final round!")
+                    self.settling_label.configure(text="Balls settled! Waiting for LED colors...")
                     print(f"✅ Balls have settled! Final count validation...")
                     print(f"🎯 Final ball positions: {sectors_string}")
-                    
-                    # Check for LED multiplier immediately when balls settle
-                    self.check_and_show_led_multiplier()
+                    print(f"⏳ Waiting for ESP32 to send LED colors for multiplier check...")
             
-            elif len(valid_sectors) != 3:
+            elif ball_count != 3 or len(valid_sectors) != 3:
                 # Reset if ball count changes
                 if self.balls_settled:
-                    print(f"⚠️ BALL COUNT CHANGED AFTER SETTLING!")
-                    print(f"   - Previous state: settled with 3 balls")
+                    print(f"⚠️ BALL/SECTOR COUNT CHANGED AFTER SETTLING!")
+                    print(f"   - Previous state: settled with 3 balls and 3 valid sectors")
+                    print(f"   - Current ball count: {ball_count}")
                     print(f"   - Current valid sectors: {len(valid_sectors)}")
                     print(f"   - Current sectors: {valid_sectors}")
                     print(f"   - Resetting settling state...")
@@ -500,8 +499,9 @@ class GameplayScreen(tk.Frame):
                 self.settling_label.configure(text="")
             
             # Check for game completion with enhanced validation
-            if len(valid_sectors) == 3 and self.balls_settled:
+            if ball_count == 3 and len(valid_sectors) == 3 and self.balls_settled:
                 print(f"🎮 GAME COMPLETION CHECK:")
+                print(f"   - Ball count: {ball_count} (need 3) ✅")
                 print(f"   - Valid sectors: {len(valid_sectors)} (need 3) ✅")
                 print(f"   - Balls settled: {self.balls_settled} ✅")
                 print(f"   - Current sectors: {valid_sectors}")
