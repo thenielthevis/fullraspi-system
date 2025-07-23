@@ -235,7 +235,7 @@ class ArcadeApp(tk.Tk):
         if not self.bgmusic_playing:
             try:
                 pygame.mixer.music.load("assets/sounds/bgmusic.mp3")
-                pygame.mixer.music.set_volume(0.5)
+                pygame.mixer.music.set_volume(0.4)
                 pygame.mixer.music.play(-1)
                 self.bgmusic_playing = True
             except Exception as e:
@@ -278,7 +278,7 @@ class ArcadeApp(tk.Tk):
             if screen_name == "InstructionScreen":
                 self.play_bgmusic()
                 sound = pygame.mixer.Sound("assets/sounds/howtoplay.mp3")
-                sound.set_volume(0.9)
+                sound.set_volume(1.0)
                 sound.play()
             elif screen_name == "GameIntroScreen":
                 self.play_bgmusic()
