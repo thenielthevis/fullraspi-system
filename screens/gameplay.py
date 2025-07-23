@@ -269,22 +269,27 @@ class GameplayScreen(tk.Frame):
                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
 
     def detect_multiple_balls_and_sectors(self, frame, hsv):
-        """Detect multiple balls and return their sectors - from objectTest.py"""
+        """Detect multiple balls and return their sectors - optimized for reliability"""
         detected_sectors = []
         
         # Threshold for ball color
         mask = cv2.inRange(hsv, self.lower_ball, self.upper_ball)
+        
+        # Debug: Check if any pixels match the color range
+        mask_pixels = cv2.countNonZero(mask)
+        if mask_pixels > 0:
+            print(f"[DEBUG] Found {mask_pixels} pixels matching ball color")
 
-        # Enhanced morphology to clean noise and separate touching balls
-        kernel = np.ones((5, 5), np.uint8)  # Larger kernel for better noise reduction
-        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations=3)  # More iterations
+        # Enhanced morphology to clean noise and separate touching balls - balanced approach
+        kernel = np.ones((4, 4), np.uint8)  # Slightly smaller kernel
+        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations=2)  # Reduced iterations
         mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=2)
 
         # Use distance transform and watershed to separate touching balls
         dist_transform = cv2.distanceTransform(mask, cv2.DIST_L2, 5)
         
-        # Find local maxima (ball centers) - More conservative threshold
-        threshold_value = 0.6 * dist_transform.max()  # Increased from 0.4 to 0.6
+        # Find local maxima (ball centers) - More sensitive detection
+        threshold_value = 0.5 * dist_transform.max()  # Reduced from 0.6 to 0.5 for better detection
         _, sure_fg = cv2.threshold(dist_transform, threshold_value, 255, 0)
         sure_fg = np.uint8(sure_fg)
         
@@ -304,14 +309,19 @@ class GameplayScreen(tk.Frame):
         ball_count = 0
         valid_detections = []  # Track valid detections to prevent duplicates
         
-        # Process each detected region with stricter validation
+        # Debug: Check if watershed found any markers
+        if markers.max() > 1:
+            print(f"[DEBUG] Watershed found {markers.max() - 1} potential regions")
+        
+        # Process each detected region with balanced validation
         for marker_id in range(2, markers.max() + 1):
             # Create mask for this specific ball
             ball_mask = np.uint8(markers == marker_id)
             
-            # Calculate area to filter out noise - More restrictive
+            # Calculate area to filter out noise - More balanced filtering
             area = cv2.countNonZero(ball_mask)
-            if area < 500 or area > 5000:  # Increased minimum area and added maximum
+            if area < 300 or area > 8000:  # Reduced minimum, increased maximum
+                print(f"[DEBUG] Rejected region {marker_id}: area {area} out of range")
                 continue
                 
             # Find contour for this ball
@@ -324,32 +334,36 @@ class GameplayScreen(tk.Frame):
             center = (int(x), int(y))
             radius = int(radius)
             
-            # More strict radius validation for balls
-            if radius < 12 or radius > 80:  # Tighter radius range
+            # More balanced radius validation for balls
+            if radius < 8 or radius > 100:  # Back to more permissive range
+                print(f"[DEBUG] Rejected region {marker_id}: radius {radius} out of range")
                 continue
             
-            # Additional shape validation - check circularity
+            # Relaxed shape validation - check circularity
             perimeter = cv2.arcLength(contour, True)
             if perimeter == 0:
+                print(f"[DEBUG] Rejected region {marker_id}: zero perimeter")
                 continue
             circularity = 4 * np.pi * area / (perimeter * perimeter)
-            if circularity < 0.5:  # Must be reasonably circular
+            if circularity < 0.3:  # Reduced from 0.5 to 0.3 - more permissive
+                print(f"[DEBUG] Rejected region {marker_id}: circularity {circularity:.2f} too low")
                 continue
             
-            # Check for minimum distance between detections to avoid duplicates
+            # Check for minimum distance between detections to avoid duplicates - more lenient
             is_duplicate = False
             for existing_center, existing_radius in valid_detections:
                 distance = np.sqrt((center[0] - existing_center[0])**2 + (center[1] - existing_center[1])**2)
-                if distance < (radius + existing_radius) * 0.8:  # 80% overlap threshold
+                if distance < (radius + existing_radius) * 0.6:  # Reduced from 0.8 to 0.6 - allow closer balls
                     is_duplicate = True
                     break
             
             if is_duplicate:
+                print(f"[DEBUG] Rejected region {marker_id}: duplicate detection")
                 continue
             
             valid_detections.append((center, radius))
-                
             ball_count += 1
+            print(f"[DEBUG] ✅ Accepted ball {ball_count}: center={center}, radius={radius}, area={area}, circularity={circularity:.2f}")
             
             # Draw colorful ball detection
             cv2.circle(frame, center, radius, (0, 255, 255), self.VISUAL_CONFIG['ball_circle_thickness'])
@@ -367,10 +381,12 @@ class GameplayScreen(tk.Frame):
                        cv2.FONT_HERSHEY_SIMPLEX, 0.3, 
                        self.VISUAL_CONFIG['sector_colors'].get(sector_label, (255, 255, 255)), 1)
         
-        # Fallback: if watershed didn't find enough balls, try contour-based detection with strict filtering
+        # Fallback: if watershed didn't find enough balls, try contour-based detection
         if ball_count == 0:
+            print(f"[DEBUG] Watershed found no balls, trying contour-based detection")
             contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             if contours:
+                print(f"[DEBUG] Found {len(contours)} contours")
                 # Sort contours by area (largest first)
                 contours = sorted(contours, key=cv2.contourArea, reverse=True)
                 
@@ -379,9 +395,9 @@ class GameplayScreen(tk.Frame):
                 ball_count = 0
                 valid_detections = []
                 
-                for contour in contours[:3]:  # Maximum 3 balls
+                for contour in contours[:5]:  # Allow up to 5 balls to be more permissive
                     area = cv2.contourArea(contour)
-                    if area < 500 or area > 5000:  # Same strict area filtering
+                    if area < 300 or area > 8000:  # Same relaxed area filtering
                         continue
                     
                     # Get contour properties
@@ -389,23 +405,23 @@ class GameplayScreen(tk.Frame):
                     center = (int(x), int(y))
                     radius = int(radius)
                     
-                    # Strict radius validation
-                    if radius < 12 or radius > 80:
+                    # Relaxed radius validation
+                    if radius < 8 or radius > 100:  # Back to permissive range
                         continue
                     
-                    # Circularity check
+                    # Relaxed circularity check
                     perimeter = cv2.arcLength(contour, True)
                     if perimeter == 0:
                         continue
                     circularity = 4 * np.pi * area / (perimeter * perimeter)
-                    if circularity < 0.5:
+                    if circularity < 0.3:  # More permissive circularity
                         continue
                     
-                    # Check for duplicates
+                    # Check for duplicates with relaxed threshold
                     is_duplicate = False
                     for existing_center, existing_radius in valid_detections:
                         distance = np.sqrt((center[0] - existing_center[0])**2 + (center[1] - existing_center[1])**2)
-                        if distance < (radius + existing_radius) * 0.8:
+                        if distance < (radius + existing_radius) * 0.6:  # More lenient duplicate detection
                             is_duplicate = True
                             break
                     
@@ -414,16 +430,20 @@ class GameplayScreen(tk.Frame):
                     
                     valid_detections.append((center, radius))
                     ball_count += 1
+                    print(f"[DEBUG] ✅ Accepted ball {ball_count}: center={center}, radius={radius}, area={area}, circularity={circularity:.2f}")
                     
+                    # Draw colorful ball detection
                     cv2.circle(frame, center, radius, (0, 255, 255), self.VISUAL_CONFIG['ball_circle_thickness'])
                     cv2.circle(frame, center, 3, (0, 0, 255), -1)
                     
+                    # Add ball number
                     cv2.putText(frame, f"Ball {ball_count}", (center[0] - 15, center[1] - radius - 8), 
                                cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 255, 255), 1)
 
                     sector_label = self.get_sector_label(center)
                     detected_sectors.append(sector_label)
                     
+                    # Show sector for each ball
                     cv2.putText(frame, sector_label, (center[0] - 15, center[1] + radius + 15), 
                                cv2.FONT_HERSHEY_SIMPLEX, 0.3, 
                                self.VISUAL_CONFIG['sector_colors'].get(sector_label, (255, 255, 255)), 1)
