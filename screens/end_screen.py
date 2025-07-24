@@ -159,6 +159,22 @@ class EndScreen(tk.Frame):
             command=lambda: self.controller.show_frame("WelcomeScreen")
         )
         back_button.place(relx=0.5, rely=0.93, anchor="center")
+        
+        # Exit button (positioned in bottom right corner)
+        exit_button = tk.Button(
+            self,
+            text="EXIT",
+            font=("Press Start 2P", 10),
+            bg="#660000",
+            fg="#ffffff",
+            activebackground="#990000",
+            activeforeground="#ffffff",
+            relief="flat",
+            padx=20,
+            pady=8,
+            command=self.exit_application
+        )
+        exit_button.place(relx=0.95, rely=0.95, anchor="se")
 
     def tkraise(self, aboveThis=None):
         """Override tkraise to update display when screen is shown"""
@@ -282,3 +298,18 @@ class EndScreen(tk.Frame):
         self.controller.show_frame("GameIntroScreen")
         if hasattr(self.controller, 'play_bgmusic'):
             self.controller.play_bgmusic()
+
+    def exit_application(self):
+        """Exit the application completely"""
+        print("[END SCREEN] Exiting application...")
+        if hasattr(self.controller, 'stop_bgmusic'):
+            self.controller.stop_bgmusic()
+        
+        # Clean shutdown of MQTT client
+        if hasattr(self.controller, 'mqtt_client') and self.controller.mqtt_client:
+            self.controller.mqtt_client.loop_stop()
+            self.controller.mqtt_client.disconnect()
+        
+        # Destroy the main window
+        self.controller.quit()
+        self.controller.destroy()
