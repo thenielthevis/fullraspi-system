@@ -166,12 +166,58 @@ app.get("/players/rfid/:rfid", (req, res) => {
       id: row.id,
       name: row.name,
       uid: row.uid,
+      rfid_number: row.uid, // Add this for frontend compatibility
       credit: row.credit,
-      points: row.points, // Modify this condition as needed
+      points: row.points,
+      is_admin: row.name.toLowerCase() === 'admin' || row.uid === 'ADMIN_UID' // Modify this condition as needed
     };
     
     console.log(`[DB] Player found: ${row.name} (${row.uid})`);
     res.json(playerData);
+  });
+});
+
+// API: Deduct points from player
+app.post("/players/deduct_points/", (req, res) => {
+  const { rfid_number, points } = req.query;
+  
+  if (!rfid_number || !points) {
+    return res.status(400).json({ error: "Missing rfid_number or points parameter" });
+  }
+  
+  const pointsToDeduct = parseInt(points);
+  if (isNaN(pointsToDeduct) || pointsToDeduct <= 0) {
+    return res.status(400).json({ error: "Invalid points value" });
+  }
+  
+  // First, check current points
+  const checkQuery = "SELECT points FROM users WHERE uid = ?";
+  db.get(checkQuery, [rfid_number], (err, row) => {
+    if (err) {
+      console.error('Database error:', err);
+      return res.status(500).json({ error: "Database error" });
+    }
+    
+    if (!row) {
+      return res.status(404).json({ error: "Player not found" });
+    }
+    
+    if (row.points < pointsToDeduct) {
+      return res.status(400).json({ error: "Insufficient points" });
+    }
+    
+    // Deduct points
+    const updateQuery = "UPDATE users SET points = points - ? WHERE uid = ?";
+    db.run(updateQuery, [pointsToDeduct, rfid_number], function(err) {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({ error: "Database error" });
+      }
+      
+      const newPoints = row.points - pointsToDeduct;
+      console.log(`[DB] Deducted ${pointsToDeduct} points from ${rfid_number}. New balance: ${newPoints}`);
+      res.json({ success: true, new_points: newPoints });
+    });
   });
 });
 
@@ -193,4 +239,5 @@ app.listen(3001, () => {
   console.log("  POST /coin-stop  - Stop coin acceptor");
   console.log("  GET  /status     - Check server status");
   console.log("  GET  /players/rfid/:rfid - Get player data by RFID");
+  console.log("  POST /players/deduct_points/ - Deduct points from player");
 });

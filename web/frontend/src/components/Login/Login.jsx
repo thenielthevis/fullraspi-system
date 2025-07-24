@@ -22,7 +22,7 @@ const Login = () => {
         const rfidUid = scanResponse.data.uid;
         
         // Now check if this RFID is registered
-        const playerResponse = await axios.get(`http://localhost:8000/players/rfid/${rfidUid}`);
+        const playerResponse = await axios.get(`http://localhost:3001/players/rfid/${rfidUid}`);
         
         if (playerResponse.status === 200) {
           const playerData = playerResponse.data;
@@ -33,7 +33,7 @@ const Login = () => {
           if (playerData.is_admin) {
             navigate('/admin-dashboard');
           } else {
-            navigate('/dashboard');
+            navigate('/'); // Redirect to landing page instead of dashboard
           }
         } else {
           setNotification({

@@ -109,7 +109,7 @@ const LandingPage = () => {
     const rfid = localStorage.getItem("rfid");
     if (rfid) {
       axios
-        .get(`http://localhost:8000/players/rfid/${rfid}`)
+        .get(`http://localhost:3001/players/rfid/${rfid}`)
         .then((response) => {
           setUser(response.data);
           setUserPoints(response.data.points);
@@ -129,7 +129,7 @@ const LandingPage = () => {
     if (userPoints >= prize.points) {
       try {
         // Deduct points from user in backend
-        const res = await axios.post("http://localhost:8000/players/deduct_points/", null, {
+        const res = await axios.post("http://localhost:3001/players/deduct_points/", null, {
           params: {
             rfid_number: user.rfid_number,
             points: prize.points
