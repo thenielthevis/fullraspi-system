@@ -190,3 +190,5 @@ logs/
 # ===== GIT =====
 # Git merge tool files
 *.orig
+# Ignore node_modules in all subfolders
+**/node_modules/
