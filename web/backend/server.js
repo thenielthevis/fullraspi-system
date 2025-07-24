@@ -43,6 +43,7 @@ mqttClient.on("message", (topic, message) => {
         pendingCoinRequest.json({ success: true, message: "Coin detected" });
         pendingCoinRequest = null;
       }
+      // mqttClient.publish("esp32/control/esp2", JSON.stringify({ status: "STOP_" }));
     }
   } catch (error) {
     // Ignore parse errors
@@ -86,7 +87,8 @@ app.post("/coin-wait", (req, res) => {
   }
   
   // Start coin acceptor
-  mqttClient.publish("esp32/control/esp2", JSON.stringify({ status : "COIN_ON" }));
+  mqttClient.publish("esp32/control/esp2", JSON.stringify({ "status" : "START_COIN" }));
+  //  mqttClient.publish("esp32/control/esp2", "COIN_ON");
   console.log("[API] Coin acceptor started, waiting for coin insertion");
   
   // Store the response object to reply when coin is detected
