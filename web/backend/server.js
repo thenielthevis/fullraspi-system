@@ -1,10 +1,22 @@
 const express = require("express");
 const cors = require("cors");
 const mqtt = require("mqtt");
+const sqlite3 = require("sqlite3").verbose();
+const path = require("path");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// SQLite Database setup
+const dbPath = path.join(__dirname, '../../arpi.sqlite');
+const db = new sqlite3.Database(dbPath, (err) => {
+  if (err) {
+    console.error('Error opening database:', err);
+  } else {
+    console.log('Connected to SQLite database at:', dbPath);
+  }
+});
 
 // MQTT Client
 const mqttClient = mqtt.connect("mqtt://192.168.1.28:1883", {
@@ -133,6 +145,36 @@ app.post("/coin-stop", (req, res) => {
   res.json({ success: true, message: "Coin acceptor stopped" });
 });
 
+// API: Get player by RFID
+app.get("/players/rfid/:rfid", (req, res) => {
+  const rfid = req.params.rfid;
+  
+  const query = "SELECT id, name, uid, credit, points FROM users WHERE uid = ?";
+  
+  db.get(query, [rfid], (err, row) => {
+    if (err) {
+      console.error('Database error:', err);
+      return res.status(500).json({ error: "Database error" });
+    }
+    
+    if (!row) {
+      return res.status(404).json({ error: "RFID not registered" });
+    }
+    
+    // Return player data with is_admin flag (you can modify this logic as needed)
+    const playerData = {
+      id: row.id,
+      name: row.name,
+      uid: row.uid,
+      credit: row.credit,
+      points: row.points, // Modify this condition as needed
+    };
+    
+    console.log(`[DB] Player found: ${row.name} (${row.uid})`);
+    res.json(playerData);
+  });
+});
+
 // Simple status check
 app.get("/status", (req, res) => {
   res.json({ 
@@ -150,4 +192,5 @@ app.listen(3001, () => {
   console.log("  POST /coin-wait  - Wait for coin insertion (keeps coin acceptor active)");
   console.log("  POST /coin-stop  - Stop coin acceptor");
   console.log("  GET  /status     - Check server status");
+  console.log("  GET  /players/rfid/:rfid - Get player data by RFID");
 });
