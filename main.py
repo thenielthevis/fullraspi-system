@@ -61,7 +61,7 @@ class ArcadeApp(tk.Tk):
         from TESTCONTROLLER import on_connect, on_message
         self.mqtt_client.on_connect = on_connect
         self.mqtt_client.on_message = on_message
-        self.mqtt_client.connect("192.168.5.34", 1883, keepalive=60)
+        self.mqtt_client.connect("192.168.1.28", 1883, keepalive=60)
         self.mqtt_client.loop_start()
 
         # Register callback for RFID
