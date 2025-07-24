@@ -3,30 +3,44 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
-  const [rfid, setRfid] = useState('');
   const [notification, setNotification] = useState(null);
+  const [isScanning, setIsScanning] = useState(false);
   const navigate = useNavigate();
 
-  const handleRfidScan = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await axios.get(`http://localhost:8000/players/rfid/${rfid}`);
-      if (response.status === 200) {
-        const playerData = response.data;
-        localStorage.setItem('playerData', JSON.stringify(playerData));
-        localStorage.setItem('rfid', rfid);
+  const handleRfidScan = async () => {
+    setIsScanning(true);
+    setNotification({
+      type: 'info',
+      message: 'Please tap your RFID card on the scanner...',
+    });
 
-        // Redirect based on admin status
-        if (playerData.is_admin) {
-          navigate('/admin-dashboard');
+    try {
+      // Call the RFID scan API
+      const scanResponse = await axios.post('http://localhost:3001/rfid-scan');
+      
+      if (scanResponse.data.success) {
+        const rfidUid = scanResponse.data.uid;
+        
+        // Now check if this RFID is registered
+        const playerResponse = await axios.get(`http://localhost:8000/players/rfid/${rfidUid}`);
+        
+        if (playerResponse.status === 200) {
+          const playerData = playerResponse.data;
+          localStorage.setItem('playerData', JSON.stringify(playerData));
+          localStorage.setItem('rfid', rfidUid);
+
+          // Redirect based on admin status
+          if (playerData.is_admin) {
+            navigate('/admin-dashboard');
+          } else {
+            navigate('/dashboard');
+          }
         } else {
-          navigate('/dashboard');
+          setNotification({
+            type: 'error',
+            message: 'RFID not registered. Please sign up first.',
+          });
         }
-      } else {
-        setNotification({
-          type: 'error',
-          message: 'RFID not registered. Please sign up first.',
-        });
       }
     } catch (error) {
       if (error.response && error.response.status === 404) {
@@ -34,12 +48,19 @@ const Login = () => {
           type: 'error',
           message: 'RFID not registered. Please sign up first.',
         });
+      } else if (error.response && error.response.status === 408) {
+        setNotification({
+          type: 'error',
+          message: 'RFID scan timeout. Please try again.',
+        });
       } else {
         setNotification({
           type: 'error',
           message: 'An error occurred. Please check your connection.',
         });
       }
+    } finally {
+      setIsScanning(false);
     }
   };
 
@@ -60,31 +81,31 @@ const Login = () => {
           <div style={styles.loginTitle}>Welcome to ArPi</div>
           <div style={styles.loginDescription}>
             Enter the world of ArPi!<br />
-            Type or Tap your RFID to log in.<br />
+            Tap the button below and scan your RFID to log in.<br />
             <span style={{fontSize: '0.9em', color: '#fff', opacity: 0.7}}>
               A Raspberry Pi Arcade Game
             </span>
           </div>
         </div>
         <div style={styles.loginRight}>
-          <form style={styles.loginForm} onSubmit={handleRfidScan}>
+          <div style={styles.loginForm}>
             <h1 style={styles.loginFormTitle}>Game Login</h1>
             <div style={{ height: 24 }} /> {/* Spacer */}
-            <input
-              type="text"
-              placeholder="RFID Number"
-              value={rfid}
-              onChange={e => setRfid(e.target.value)}
-              required
-             style={{
-    ...styles.input,
-    fontSize: '1.2rem', // increase font size for bigger placeholder
-    letterSpacing: '2px', // add more space between characters
-    padding: '14px 0',    // make input taller for more space
-  }}
-            />
+            <div style={styles.scanInstructions}>
+              Tap your RFID card on the scanner when prompted
+            </div>
             <div style={{ height: 24 }} /> {/* Spacer */}
-            <button type="submit" style={styles.button}>Log In</button>
+            <button 
+              type="button" 
+              style={{
+                ...styles.button,
+                ...(isScanning ? styles.buttonScanning : {})
+              }}
+              onClick={handleRfidScan}
+              disabled={isScanning}
+            >
+              {isScanning ? 'Scanning...' : 'Scan RFID to Log In'}
+            </button>
             <div style={{ height: 24 }} /> {/* Spacer */}
             <div style={styles.loginFooter}>Powered by Project-Arpi</div>
             <div style={{ marginTop: '18px', textAlign: 'center' }}>
@@ -101,12 +122,16 @@ const Login = () => {
               </span>
             </div>
               <div style={{ height: 24 }} /> {/* Spacer */}
-          </form>
+          </div>
         </div>
       </div>
 
       {notification && (
-        <div style={{...styles.notification, ...(notification.type === 'error' ? styles.notificationError : {})}}>
+        <div style={{
+          ...styles.notification, 
+          ...(notification.type === 'error' ? styles.notificationError : 
+              notification.type === 'info' ? styles.notificationInfo : {})
+        }}>
           <div style={styles.notificationMessage}>{notification.message}</div>
           <button style={styles.notificationBtn} onClick={closeNotification}>OK</button>
         </div>
@@ -241,6 +266,19 @@ const styles = {
     transform: 'translateY(-2px) scale(1.05)',
     boxShadow: '0 4px 24px rgba(178, 102, 255, 0.8)',
   },
+  buttonScanning: {
+    background: 'linear-gradient(90deg, #4a1a5c 0%, #6c2ebf 100%)',
+    opacity: 0.7,
+    cursor: 'not-allowed',
+  },
+  scanInstructions: {
+    color: '#b266ff',
+    fontSize: '1rem',
+    textAlign: 'center',
+    fontFamily: "'Orbitron', 'Segoe UI', Arial, sans-serif",
+    letterSpacing: '1px',
+    opacity: 0.9,
+  },
   loginFooter: {
     color: '#b266ff',
     fontSize: '0.8rem',
@@ -266,6 +304,10 @@ const styles = {
   },
   notificationError: {
     backgroundColor: '#240046',
+  },
+  notificationInfo: {
+    backgroundColor: '#4a1a5c',
+    border: '2px solid #b266ff',
   },
   notificationMessage: {
     fontSize: '1.2rem',
