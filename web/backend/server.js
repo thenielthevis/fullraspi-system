@@ -83,8 +83,9 @@ app.post("/coin-wait", (req, res) => {
     return res.status(503).json({ error: "MQTT not connected" });
   }
   
-  // Start coin acceptor (assuming it's always on, or send a start command if needed)
-  console.log("[API] Waiting for coin insertion");
+  // Start coin acceptor
+  mqttClient.publish("esp32/control/esp2", JSON.stringify({ status: "START_COIN" }));
+  console.log("[API] Coin acceptor started, waiting for coin insertion");
   
   // Store the response object to reply when coin is detected
   pendingCoinRequest = res;
