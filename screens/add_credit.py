@@ -125,7 +125,7 @@ class AddCreditScreen(tk.Frame):
         self.coin_mode = True
         self.coin_status_label.config(text="Insert coins now!")
         if hasattr(self.controller, 'send_esp2_command'):
-            self.controller.send_esp2_command("START_COIN")
+            self.controller.send_esp2_command("COIN_ON")
         else:
             send_status_cmd(self.controller.mqtt_client, "START_COIN")
         # Optionally, subscribe to coin events here

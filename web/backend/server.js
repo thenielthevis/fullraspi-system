@@ -19,7 +19,7 @@ let pendingCoinRequest = null;
 
 mqttClient.on("connect", () => {
   console.log("MQTT connected to broker");
-  mqttClient.subscribe("esp32/#");
+  mqttClient.subscribe("esp32/data");
 });
 
 mqttClient.on("message", (topic, message) => {
@@ -27,6 +27,8 @@ mqttClient.on("message", (topic, message) => {
     const packet = JSON.parse(message.toString());
     const type = packet.type;
     const data = packet.data;
+
+    console.log(packet);
     
     if (type === "RFID" && pendingRfidRequest) {
       console.log(`[RFID] UID received: ${data}`);
@@ -84,7 +86,7 @@ app.post("/coin-wait", (req, res) => {
   }
   
   // Start coin acceptor
-  mqttClient.publish("esp32/control/esp2", JSON.stringify({ status: "START_COIN" }));
+  mqttClient.publish("esp32/control/esp2", JSON.stringify({ status : "COIN_ON" }));
   console.log("[API] Coin acceptor started, waiting for coin insertion");
   
   // Store the response object to reply when coin is detected
