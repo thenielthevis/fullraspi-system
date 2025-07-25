@@ -325,6 +325,12 @@ class EndScreen(tk.Frame):
             self.after(500, self.start_ultra_scan_and_monitor)
         else:
             self.ultra_scan_running = False  # Stop scan loop
+            # Send ULTRA_STOP only once, right after 3 balls detected
+            if hasattr(self.controller, 'send_esp2_command'):
+                self.controller.send_esp2_command("ULTRA_STOP")
+            else:
+                from TESTCONTROLLER import send_status_cmd
+                send_status_cmd(self.controller.mqtt_client, "ULTRA_STOP")
 
     def play_again(self):
         """Reset game state and go back to game intro"""

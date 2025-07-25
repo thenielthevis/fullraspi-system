@@ -115,6 +115,11 @@ class AddCreditScreen(tk.Frame):
             self.after(500, self.start_ultra_scan_and_monitor)
         else:
             self.ultra_scan_running = False  # Stop scan loop
+            # Send ULTRA_STOP only once, right after 3 balls detected
+            if hasattr(self.controller, 'send_esp2_command'):
+                self.controller.send_esp2_command("ULTRA_STOP")
+            else:
+                send_status_cmd(self.controller.mqtt_client, "ULTRA_STOP")
 
     def is_three_balls_detected(self):
         """Check if 3 balls detected from tunnel_passages only"""
