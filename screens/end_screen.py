@@ -183,7 +183,6 @@ class EndScreen(tk.Frame):
         super().tkraise(aboveThis)
         self.update_display()
         self.ultra_scan_running = False  # Reset scan state on show
-        self.detect_back_button.config(state="disabled", text="DETECTING 3 BALLS...")
         self.start_ultra_scan_and_monitor()
 
     def update_display(self):
@@ -276,30 +275,18 @@ class EndScreen(tk.Frame):
                     fg="#ff6600"
                 )
 
-    def on_three_balls_detected(self):
-        """Call this when ESP32 reports 3 balls detected"""
-        self.detect_back_button.config(
-            state="normal",
-            text="3 BALLS DETECTED",
-            command=lambda: self.set_back_to_welcome()
-        )
-
-    def set_back_to_welcome(self):
-        self.detect_back_button.config(text="BACK TO WELCOME")
-        self.controller.show_frame("WelcomeScreen")
-
     def update_detect_back_button(self):
         """Update the detect/back button based on number of detected balls"""
         num_balls = len(getattr(self.controller, 'tunnel_passages', []))
         if num_balls >= 3:
             self.detect_back_button.config(
-                text="3 BALLS DETECTED",
+                text="BACK TO WELCOME",
                 state="normal",
-                command=lambda: self.set_back_to_welcome()
+                command=lambda: self.controller.show_frame("WelcomeScreen")
             )
         else:
             self.detect_back_button.config(
-                text="DETECTING 3 BALLS...",
+                text="DETECTING 3 BALLS",
                 state="disabled",
                 command=self.ultra_scan_command
             )
@@ -310,19 +297,20 @@ class EndScreen(tk.Frame):
             self.controller.send_esp2_command("ULTRA_SCAN")
         else:
             print("[END SCREEN] send_esp2_command not available")
-        self.detect_back_button.config(state="disabled", text="DETECTING 3 BALLS...")
+        self.detect_back_button.config(state="disabled", text="DETECTING 3 BALLS")
+        self.after(1000, self.update_detect_back_button)
 
     def start_ultra_scan_and_monitor(self):
         """Start ULTRA_SCAN and monitor for 3 balls detected"""
         if not self.ultra_scan_running:
             self.ultra_scan_command()
             self.ultra_scan_running = True
-        # Button stays disabled and says "DETECTING 3 BALLS..." until 3 balls detected
         self.update_detect_back_button()
         # Continue checking until 3 balls detected
         if len(getattr(self.controller, 'tunnel_passages', [])) < 3:
             self.after(500, self.start_ultra_scan_and_monitor)
-        # else: do not enable here, wait for on_three_balls_detected
+        else:
+            self.ultra_scan_running = False  # Stop scan loop
 
     def play_again(self):
         """Reset game state and go back to game intro"""
