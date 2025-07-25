@@ -144,10 +144,10 @@ class EndScreen(tk.Frame):
         )
         play_again_button.place(relx=0.5, rely=0.85, anchor="center")
         
-        # Back to Welcome button
-        back_button = tk.Button(
+        # Store reference to the detect/back button
+        self.detect_back_button = tk.Button(
             self,
-            text="BACK TO WELCOME",
+            text="DETECTING 3 BALLS...",
             font=("Press Start 2P", 12),
             bg="#000000",
             fg="#ffff00",
@@ -156,9 +156,9 @@ class EndScreen(tk.Frame):
             relief="flat",
             padx=20,
             pady=8,
-            command=lambda: self.controller.show_frame("WelcomeScreen")
+            command=self.ultra_scan_command
         )
-        back_button.place(relx=0.5, rely=0.93, anchor="center")
+        self.detect_back_button.place(relx=0.5, rely=0.93, anchor="center")
         
         # Exit button (positioned in bottom right corner)
         exit_button = tk.Button(
@@ -180,6 +180,7 @@ class EndScreen(tk.Frame):
         """Override tkraise to update display when screen is shown"""
         super().tkraise(aboveThis)
         self.update_display()
+        self.update_detect_back_button()
 
     def update_display(self):
         """Update the display with current player info and points"""
@@ -270,6 +271,33 @@ class EndScreen(tk.Frame):
                     text="No points earned this round",
                     fg="#ff6600"
                 )
+
+    def update_detect_back_button(self):
+        """Update the detect/back button based on number of detected balls"""
+        # Use controller.tunnel_passages to count detected balls
+        num_balls = len(getattr(self.controller, 'tunnel_passages', []))
+        if num_balls >= 3:
+            self.detect_back_button.config(
+                text="BACK TO WELCOME",
+                state="normal",
+                command=lambda: self.controller.show_frame("WelcomeScreen")
+            )
+        else:
+            self.detect_back_button.config(
+                text="Detecting 3 balls...",
+                state="normal",
+                command=self.ultra_scan_command
+            )
+
+    def ultra_scan_command(self):
+        """Send ULTRA_SCAN command to esp32"""
+        if hasattr(self.controller, 'send_esp1_command'):
+            self.controller.send_esp1_command("ULTRA_SCAN")
+        else:
+            print("[END SCREEN] send_esp1_command not available")
+        # Optionally, disable button briefly to prevent spamming
+        self.detect_back_button.config(state="disabled")
+        self.after(1000, lambda: self.detect_back_button.config(state="normal"))
 
     def play_again(self):
         """Reset game state and go back to game intro"""

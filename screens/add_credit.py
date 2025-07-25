@@ -73,7 +73,8 @@ class AddCreditScreen(tk.Frame):
             pady=10
         )
         self.credit_label.place(relx=0.5, rely=0.42, anchor="center")
-        play_button = tk.Button(
+        # Store reference to play button
+        self.play_button = tk.Button(
             self,
             text="PLAY",
             font=("Press Start 2P", 15),
@@ -86,7 +87,7 @@ class AddCreditScreen(tk.Frame):
             pady=10,
             command=self.play_game
         )
-        play_button.place(relx=0.5, rely=0.58, anchor="center")
+        self.play_button.place(relx=0.5, rely=0.58, anchor="center")
         self.coin_status_label = tk.Label(
             self,
             text="",
@@ -96,6 +97,18 @@ class AddCreditScreen(tk.Frame):
             pady=10
         )
         self.coin_status_label.place(relx=0.5, rely=0.46, anchor="center")
+
+    def tkraise(self, aboveThis=None):
+        super().tkraise(aboveThis)
+        self.update_play_button_state()
+
+    def update_play_button_state(self):
+        """Enable PLAY button only if 3 balls detected"""
+        num_balls = len(getattr(self.controller, 'tunnel_passages', []))
+        if num_balls >= 3:
+            self.play_button.config(state="normal")
+        else:
+            self.play_button.config(state="disabled")
 
     def set_uid(self, uid):
         self.current_uid = uid
@@ -113,6 +126,7 @@ class AddCreditScreen(tk.Frame):
             print(f"[User] Logged in: {row[1]} (UID: {uid})")
         else:
             self.credit_label.config(text="CREDIT: -")
+        self.update_play_button_state()
 
     def add_credit(self):
         print("[Simulated] Credit added.")
@@ -135,6 +149,7 @@ class AddCreditScreen(tk.Frame):
             add_credit(self.current_uid, 1)
             self.set_uid(self.current_uid)
             self.coin_status_label.config(text="Coin inserted! Credit updated.")
+        self.update_play_button_state()
 
     def play_game(self):
         # Check if user has sufficient credits before allowing gameplay
