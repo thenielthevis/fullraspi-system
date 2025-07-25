@@ -109,20 +109,36 @@ class AddCreditScreen(tk.Frame):
         if not self.ultra_scan_running:
             self.ultra_scan_command()
             self.ultra_scan_running = True
-        self.update_play_button_state()
+        self.check_ball_detection_and_update_play_button()
         # Continue checking until 3 balls detected
-        if len(getattr(self.controller, 'tunnel_passages', [])) < 3:
+        if not self.is_three_balls_detected():
             self.after(500, self.start_ultra_scan_and_monitor)
         else:
             self.ultra_scan_running = False  # Stop scan loop
 
-    def update_play_button_state(self):
-        """Enable PLAY button only if 3 balls detected, update text accordingly"""
-        num_balls = len(getattr(self.controller, 'tunnel_passages', []))
-        if num_balls >= 3:
+    def is_three_balls_detected(self):
+        """Check if 3 balls detected from tunnel_passages or log"""
+        # Check tunnel_passages first
+        if len(getattr(self.controller, 'tunnel_passages', [])) >= 3:
+            return True
+        # Check logs if available
+        logs = getattr(self.controller, 'esp32_logs', [])
+        for log in logs:
+            if ("3 balls detected" in log and "20-35cm" in log) or \
+               ("Ball detected in range" in log and "(3/3)" in log):
+                return True
+        return False
+
+    def check_ball_detection_and_update_play_button(self):
+        """Update PLAY button state based on ball detection"""
+        if self.is_three_balls_detected():
             self.play_button.config(state="normal", text="PLAY")
         else:
             self.play_button.config(state="disabled", text="DETECTING 3 BALLS")
+
+    def update_play_button_state(self):
+        """Enable PLAY button only if 3 balls detected, update text accordingly"""
+        self.check_ball_detection_and_update_play_button()
 
     def set_uid(self, uid):
         self.current_uid = uid

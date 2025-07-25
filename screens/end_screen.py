@@ -275,10 +275,20 @@ class EndScreen(tk.Frame):
                     fg="#ff6600"
                 )
 
-    def update_detect_back_button(self):
-        """Update the detect/back button based on number of detected balls"""
-        num_balls = len(getattr(self.controller, 'tunnel_passages', []))
-        if num_balls >= 3:
+    def is_three_balls_detected(self):
+        """Check if 3 balls detected from tunnel_passages or log"""
+        if len(getattr(self.controller, 'tunnel_passages', [])) >= 3:
+            return True
+        logs = getattr(self.controller, 'esp32_logs', [])
+        for log in logs:
+            if ("3 balls detected" in log and "20-35cm" in log) or \
+               ("Ball detected in range" in log and "(3/3)" in log):
+                return True
+        return False
+
+    def check_ball_detection_and_update_back_button(self):
+        """Update BACK TO WELCOME button state based on ball detection"""
+        if self.is_three_balls_detected():
             self.detect_back_button.config(
                 text="BACK TO WELCOME",
                 state="normal",
@@ -290,6 +300,10 @@ class EndScreen(tk.Frame):
                 state="disabled",
                 command=self.ultra_scan_command
             )
+
+    def update_detect_back_button(self):
+        """Update the detect/back button based on number of detected balls"""
+        self.check_ball_detection_and_update_back_button()
 
     def ultra_scan_command(self):
         """Send ULTRA_SCAN command to esp32"""
@@ -305,9 +319,9 @@ class EndScreen(tk.Frame):
         if not self.ultra_scan_running:
             self.ultra_scan_command()
             self.ultra_scan_running = True
-        self.update_detect_back_button()
+        self.check_ball_detection_and_update_back_button()
         # Continue checking until 3 balls detected
-        if len(getattr(self.controller, 'tunnel_passages', [])) < 3:
+        if not self.is_three_balls_detected():
             self.after(500, self.start_ultra_scan_and_monitor)
         else:
             self.ultra_scan_running = False  # Stop scan loop
