@@ -97,10 +97,24 @@ class AddCreditScreen(tk.Frame):
             pady=10
         )
         self.coin_status_label.place(relx=0.5, rely=0.46, anchor="center")
+        self.ultra_scan_running = False  # Track if scan has been started
 
     def tkraise(self, aboveThis=None):
         super().tkraise(aboveThis)
+        self.ultra_scan_running = False  # Reset scan state on show
+        self.start_ultra_scan_and_monitor()
+
+    def start_ultra_scan_and_monitor(self):
+        """Start ULTRA_SCAN and monitor for 3 balls detected"""
+        if not self.ultra_scan_running:
+            self.ultra_scan_command()
+            self.ultra_scan_running = True
         self.update_play_button_state()
+        # Continue checking until 3 balls detected
+        if len(getattr(self.controller, 'tunnel_passages', [])) < 3:
+            self.after(500, self.start_ultra_scan_and_monitor)
+        else:
+            self.ultra_scan_running = False  # Stop scan loop
 
     def update_play_button_state(self):
         """Enable PLAY button only if 3 balls detected"""
@@ -201,3 +215,13 @@ class AddCreditScreen(tk.Frame):
             send_status_cmd(self.controller.mqtt_client, "START_TOUCH", topic_override="esp32/control/esp1")
         print("[Simulated] Play button pressed.")
         self.controller.show_frame("InstructionScreen")
+
+    def ultra_scan_command(self):
+        """Send ULTRA_SCAN command to esp32"""
+        if hasattr(self.controller, 'send_esp2_command'):
+            self.controller.send_esp2_command("ULTRA_SCAN")
+        else:
+            print("[ADD CREDIT] send_esp2_command not available")
+        # Optionally, disable play button briefly to prevent spamming
+        self.play_button.config(state="disabled")
+        # No need to re-enable here; update_play_button_state will handle it

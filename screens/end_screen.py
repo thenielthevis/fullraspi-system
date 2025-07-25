@@ -176,11 +176,14 @@ class EndScreen(tk.Frame):
         )
         exit_button.place(relx=0.95, rely=0.95, anchor="se")
 
+        self.ultra_scan_running = False  # Track if scan has been started
+
     def tkraise(self, aboveThis=None):
         """Override tkraise to update display when screen is shown"""
         super().tkraise(aboveThis)
         self.update_display()
-        self.update_detect_back_button()
+        self.ultra_scan_running = False  # Reset scan state on show
+        self.start_ultra_scan_and_monitor()
 
     def update_display(self):
         """Update the display with current player info and points"""
@@ -291,13 +294,25 @@ class EndScreen(tk.Frame):
 
     def ultra_scan_command(self):
         """Send ULTRA_SCAN command to esp32"""
-        if hasattr(self.controller, 'send_esp1_command'):
-            self.controller.send_esp1_command("ULTRA_SCAN")
+        if hasattr(self.controller, 'send_esp2_command'):
+            self.controller.send_esp2_command("ULTRA_SCAN")
         else:
-            print("[END SCREEN] send_esp1_command not available")
+            print("[END SCREEN] send_esp2_command not available")
         # Optionally, disable button briefly to prevent spamming
         self.detect_back_button.config(state="disabled")
         self.after(1000, lambda: self.detect_back_button.config(state="normal"))
+
+    def start_ultra_scan_and_monitor(self):
+        """Start ULTRA_SCAN and monitor for 3 balls detected"""
+        if not self.ultra_scan_running:
+            self.ultra_scan_command()
+            self.ultra_scan_running = True
+        self.update_detect_back_button()
+        # Continue checking until 3 balls detected
+        if len(getattr(self.controller, 'tunnel_passages', [])) < 3:
+            self.after(500, self.start_ultra_scan_and_monitor)
+        else:
+            self.ultra_scan_running = False  # Stop scan loop
 
     def play_again(self):
         """Reset game state and go back to game intro"""
