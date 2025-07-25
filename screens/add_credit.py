@@ -117,12 +117,12 @@ class AddCreditScreen(tk.Frame):
             self.ultra_scan_running = False  # Stop scan loop
 
     def update_play_button_state(self):
-        """Enable PLAY button only if 3 balls detected"""
+        """Enable PLAY button only if 3 balls detected, update text accordingly"""
         num_balls = len(getattr(self.controller, 'tunnel_passages', []))
         if num_balls >= 3:
-            self.play_button.config(state="normal")
+            self.play_button.config(state="normal", text="PLAY")
         else:
-            self.play_button.config(state="disabled")
+            self.play_button.config(state="disabled", text="DETECTING 3 BALLS...")
 
     def set_uid(self, uid):
         self.current_uid = uid

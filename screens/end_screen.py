@@ -277,7 +277,6 @@ class EndScreen(tk.Frame):
 
     def update_detect_back_button(self):
         """Update the detect/back button based on number of detected balls"""
-        # Use controller.tunnel_passages to count detected balls
         num_balls = len(getattr(self.controller, 'tunnel_passages', []))
         if num_balls >= 3:
             self.detect_back_button.config(
@@ -287,8 +286,8 @@ class EndScreen(tk.Frame):
             )
         else:
             self.detect_back_button.config(
-                text="Detecting 3 balls...",
-                state="normal",
+                text="DETECTING 3 BALLS...",
+                state="disabled",
                 command=self.ultra_scan_command
             )
 
@@ -298,9 +297,9 @@ class EndScreen(tk.Frame):
             self.controller.send_esp2_command("ULTRA_SCAN")
         else:
             print("[END SCREEN] send_esp2_command not available")
-        # Optionally, disable button briefly to prevent spamming
-        self.detect_back_button.config(state="disabled")
-        self.after(1000, lambda: self.detect_back_button.config(state="normal"))
+        # Always show "DETECTING 3 BALLS..." when disabled
+        self.detect_back_button.config(state="disabled", text="DETECTING 3 BALLS...")
+        self.after(1000, self.update_detect_back_button)
 
     def start_ultra_scan_and_monitor(self):
         """Start ULTRA_SCAN and monitor for 3 balls detected"""
