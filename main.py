@@ -7,21 +7,13 @@ from screens.gameplay import GameplayScreen
 from screens.final_screen import FinalScreen
 from screens.end_screen import EndScreen
 from screens.rewards import RewardsScreen
-from TESTCONTROLLER import send_status_cmd, set_rfid_callback, set_coin_callback, set_touch_callback, set_proximity_callback, set_led_callback
+from TESTCONTROLLER import send_status_cmd, set_rfid_callback, set_coin_callback, set_touch_callback, set_proximity_callback, set_led_callback, set_ultrasonic_callback
 import paho.mqtt.client as mqtt
 from DbSetup import user_exists
 import uuid
 import pygame  # For playing sound
 
 class ArcadeApp(tk.Tk):
-    def on_ultrasonic_log(self, log_str):
-        """Handle new ultrasonic log: append to logs and notify AddCreditScreen."""
-        if not hasattr(self, 'esp32_logs'):
-            self.esp32_logs = []
-        self.esp32_logs.append(log_str)
-        add_credit_screen = self.frames.get("AddCreditScreen")
-        if add_credit_screen and hasattr(add_credit_screen, "on_new_ultrasonic_log"):
-            add_credit_screen.on_new_ultrasonic_log()
     def __init__(self):
         super().__init__()
         self.title("Arcade Game")
@@ -95,6 +87,16 @@ class ArcadeApp(tk.Tk):
                 self.after(0, show_unregistered)
 
         set_rfid_callback(on_rfid)
+
+        # Register callback for ultrasonic logs
+        def on_ultrasonic_log(self, log_str):
+        """Handle new ultrasonic log: append to logs and notify AddCreditScreen."""
+        if not hasattr(self, 'esp32_logs'):
+            self.esp32_logs = []
+        self.esp32_logs.append(log_str)
+        add_credit_screen = self.frames.get("AddCreditScreen")
+        if add_credit_screen and hasattr(add_credit_screen, "on_new_ultrasonic_log"):
+            add_credit_screen.on_new_ultrasonic_log()
 
         # --- COIN EVENT HANDLING ---
         def on_coin():
