@@ -241,6 +241,10 @@ class AddCreditScreen(tk.Frame):
         self.play_button.config(state="disabled", text="DETECTING 3 BALLS")
         # No need to re-enable here; update_play_button_state will handle it
 
-    def on_new_ultrasonic_log(self):
-        """Call this when a new ultrasonic log is received to update play button state."""
-        self.update_play_button_state()
+    def on_new_esp32_log(self, log_str):
+        # This should be called whenever a new log arrives from ESP32
+        self.controller.esp32_logs.append(log_str)
+        # Notify AddCreditScreen to update play button state
+        if hasattr(self.controller, 'add_credit_screen') and hasattr(self.controller.add_credit_screen, 'on_new_ultrasonic_log'):
+            self.controller.add_credit_screen.on_new_ultrasonic_log()
+        # If you have other screens to notify, add them here

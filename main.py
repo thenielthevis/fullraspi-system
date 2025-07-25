@@ -14,6 +14,14 @@ import uuid
 import pygame  # For playing sound
 
 class ArcadeApp(tk.Tk):
+    def on_ultrasonic_log(self, log_str):
+        """Handle new ultrasonic log: append to logs and notify AddCreditScreen."""
+        if not hasattr(self, 'esp32_logs'):
+            self.esp32_logs = []
+        self.esp32_logs.append(log_str)
+        add_credit_screen = self.frames.get("AddCreditScreen")
+        if add_credit_screen and hasattr(add_credit_screen, "on_new_ultrasonic_log"):
+            add_credit_screen.on_new_ultrasonic_log()
     def __init__(self):
         super().__init__()
         self.title("Arcade Game")
