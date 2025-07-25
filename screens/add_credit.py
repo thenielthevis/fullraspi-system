@@ -244,3 +244,7 @@ class AddCreditScreen(tk.Frame):
     def on_new_ultrasonic_log(self):
         """Call this when a new ultrasonic log is received to update play button state."""
         self.update_play_button_state()
+
+    def enable_play_button(self):
+        """Enable the PLAY button and set its text to 'PLAY'."""
+        self.play_button.config(state="normal", text="PLAY")
