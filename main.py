@@ -88,8 +88,16 @@ class ArcadeApp(tk.Tk):
 
         set_rfid_callback(on_rfid)
 
-        def on_ultrasonic_log(self, log_str):
-            """Directly enable PLAY button on AddCreditScreen when called."""
+        def on_ultrasonic_log(self, packet):
+            """Handle ULTRASONIC MQTT events and update tunnel_passages for ball detection."""
+            data = packet.get("data", "")
+            # If a ball is detected, append a marker
+            if "Ball detected in range" in data:
+                self.tunnel_passages.append("Ball")
+            elif "3 balls detected in range" in data:
+                # Ensure 3 balls are marked if not already
+                while len(self.tunnel_passages) < 3:
+                    self.tunnel_passages.append("Ball")
             add_credit_screen = self.frames.get("AddCreditScreen")
             if add_credit_screen and hasattr(add_credit_screen, "enable_play_button"):
                 add_credit_screen.enable_play_button()

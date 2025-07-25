@@ -117,17 +117,8 @@ class AddCreditScreen(tk.Frame):
             self.ultra_scan_running = False  # Stop scan loop
 
     def is_three_balls_detected(self):
-        """Check if 3 balls detected from tunnel_passages or log"""
-        # Check tunnel_passages first
-        if len(getattr(self.controller, 'tunnel_passages', [])) >= 3:
-            return True
-        # Check logs if available
-        logs = getattr(self.controller, 'esp32_logs', [])
-        for log in logs:
-            if ("3 balls detected" in log and "20-35cm" in log) or \
-               ("Ball detected in range" in log and "(3/3)" in log):
-                return True
-        return False
+        """Check if 3 balls detected from tunnel_passages only"""
+        return len(getattr(self.controller, 'tunnel_passages', [])) >= 3
 
     def check_ball_detection_and_update_play_button(self):
         """Update PLAY button state based on ball detection"""
