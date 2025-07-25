@@ -102,6 +102,7 @@ class AddCreditScreen(tk.Frame):
     def tkraise(self, aboveThis=None):
         super().tkraise(aboveThis)
         self.ultra_scan_running = False  # Reset scan state on show
+        self.play_button.config(state="disabled", text="DETECTING 3 BALLS...")
         self.start_ultra_scan_and_monitor()
 
     def start_ultra_scan_and_monitor(self):
@@ -109,20 +110,18 @@ class AddCreditScreen(tk.Frame):
         if not self.ultra_scan_running:
             self.ultra_scan_command()
             self.ultra_scan_running = True
-        self.update_play_button_state()
+        # Button stays disabled and says "DETECTING 3 BALLS..." until 3 balls detected
         # Continue checking until 3 balls detected
         if len(getattr(self.controller, 'tunnel_passages', [])) < 3:
             self.after(500, self.start_ultra_scan_and_monitor)
         else:
             self.ultra_scan_running = False  # Stop scan loop
 
-    def update_play_button_state(self):
-        """Enable PLAY button only if 3 balls detected, update text accordingly"""
-        num_balls = len(getattr(self.controller, 'tunnel_passages', []))
-        if num_balls >= 3:
-            self.play_button.config(state="normal", text="PLAY")
-        else:
-            self.play_button.config(state="disabled", text="DETECTING 3 BALLS...")
+    def on_three_balls_detected(self):
+        """Call this when ESP32 reports 3 balls detected"""
+        self.play_button.config(state="normal", text="3 BALLS DETECTED")
+        # Optionally, after a short delay, set to "PLAY" (or do this after click)
+        # self.after(1000, lambda: self.play_button.config(text="PLAY"))
 
     def set_uid(self, uid):
         self.current_uid = uid
@@ -215,6 +214,7 @@ class AddCreditScreen(tk.Frame):
             send_status_cmd(self.controller.mqtt_client, "START_TOUCH", topic_override="esp32/control/esp1")
         print("[Simulated] Play button pressed.")
         self.controller.show_frame("InstructionScreen")
+        self.play_button.config(text="PLAY")  # Set to PLAY after click
 
     def ultra_scan_command(self):
         """Send ULTRA_SCAN command to esp32"""
