@@ -88,13 +88,11 @@ class ArcadeApp(tk.Tk):
 
         set_rfid_callback(on_rfid)
 
-    # Register callback for ultrasonic logs
-    set_ultrasonic_callback(self.on_ultrasonic_log)
-    def on_ultrasonic_log(self, log_str):
-        """Directly enable PLAY button on AddCreditScreen when called."""
-        add_credit_screen = self.frames.get("AddCreditScreen")
-        if add_credit_screen and hasattr(add_credit_screen, "enable_play_button"):
-            add_credit_screen.enable_play_button()
+        def on_ultrasonic_log(self, log_str):
+            """Directly enable PLAY button on AddCreditScreen when called."""
+            add_credit_screen = self.frames.get("AddCreditScreen")
+            if add_credit_screen and hasattr(add_credit_screen, "enable_play_button"):
+                add_credit_screen.enable_play_button()
 
         # --- COIN EVENT HANDLING ---
         def on_coin():
@@ -234,6 +232,9 @@ class ArcadeApp(tk.Tk):
             frame.grid(row=0, column=0, sticky="nsew")
 
         self.show_frame("WelcomeScreen")
+
+    # Register callback for ultrasonic logs (after frames are initialized)
+    set_ultrasonic_callback(self.on_ultrasonic_log)
 
     def get_screen_size(self):
         """Get current screen dimensions"""
