@@ -88,19 +88,7 @@ class ArcadeApp(tk.Tk):
 
         set_rfid_callback(on_rfid)
 
-        def on_ultrasonic_log(self, packet):
-            """Handle ULTRASONIC MQTT events and update tunnel_passages for ball detection."""
-            data = packet.get("data", "")
-            # If a ball is detected, append a marker
-            if "Ball detected in range" in data:
-                self.tunnel_passages.append("Ball")
-            elif "3 balls detected in range" in data:
-                # Ensure 3 balls are marked if not already
-                while len(self.tunnel_passages) < 3:
-                    self.tunnel_passages.append("Ball")
-            add_credit_screen = self.frames.get("AddCreditScreen")
-            if add_credit_screen and hasattr(add_credit_screen, "enable_play_button"):
-                add_credit_screen.enable_play_button()
+        set_ultrasonic_callback(self.on_ultrasonic_log)
 
         # --- COIN EVENT HANDLING ---
         def on_coin():
@@ -240,9 +228,6 @@ class ArcadeApp(tk.Tk):
             frame.grid(row=0, column=0, sticky="nsew")
 
         self.show_frame("WelcomeScreen")
-
-    # Register callback for ultrasonic logs (after frames are initialized)
-    set_ultrasonic_callback(self.on_ultrasonic_log)
 
     def get_screen_size(self):
         """Get current screen dimensions"""
@@ -385,6 +370,20 @@ class ArcadeApp(tk.Tk):
         popup.after(5000, popup.destroy)
         
         print(f"[TUNNEL SUCCESS POPUP] Showing popup for {tunnel_name} (5 second duration)")
+
+    def on_ultrasonic_log(self, packet):
+        """Handle ULTRASONIC MQTT events and update tunnel_passages for ball detection."""
+        data = packet.get("data", "")
+        # If a ball is detected, append a marker
+        if "Ball detected in range" in data:
+            self.tunnel_passages.append("Ball")
+        elif "3 balls detected in range" in data:
+            # Ensure 3 balls are marked if not already
+            while len(self.tunnel_passages) < 3:
+                self.tunnel_passages.append("Ball")
+        add_credit_screen = self.frames.get("AddCreditScreen")
+        if add_credit_screen and hasattr(add_credit_screen, "enable_play_button"):
+            add_credit_screen.enable_play_button()
 
 if __name__ == "__main__":
     app = ArcadeApp()
