@@ -222,6 +222,4 @@ class AddCreditScreen(tk.Frame):
             self.controller.send_esp2_command("ULTRA_SCAN")
         else:
             print("[ADD CREDIT] send_esp2_command not available")
-        # Optionally, disable play button briefly to prevent spamming
-        self.play_button.config(state="disabled")
-        # No need to re-enable here; update_play_button_state will handle it
+        self.play_button.config(state="disabled", text="DETECTING 3 BALLS...")

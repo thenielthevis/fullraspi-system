@@ -297,9 +297,7 @@ class EndScreen(tk.Frame):
             self.controller.send_esp2_command("ULTRA_SCAN")
         else:
             print("[END SCREEN] send_esp2_command not available")
-        # Always show "DETECTING 3 BALLS..." when disabled
         self.detect_back_button.config(state="disabled", text="DETECTING 3 BALLS...")
-        self.after(1000, self.update_detect_back_button)
 
     def start_ultra_scan_and_monitor(self):
         """Start ULTRA_SCAN and monitor for 3 balls detected"""
