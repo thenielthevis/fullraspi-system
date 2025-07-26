@@ -1,40 +1,188 @@
+// import React, { useState } from 'react';
+// import axios from 'axios';
+// import { useNavigate } from 'react-router-dom';
+
+// const Register = () => {
+//   const [name, setName] = useState('');
+//   const [rfidNumber, setRfidNumber] = useState('');
+//   const [notification, setNotification] = useState(null);
+//   const navigate = useNavigate();
+
+//   const handleSubmit = async (e) => {
+//     e.preventDefault();
+//     try {
+//       const response = await axios.post('http://localhost:8000/create-players/', {
+//         name: name,
+//         rfid_number: rfidNumber,
+//       });
+//       if (response.status === 200) {
+//         const data = response.data;
+//         setNotification({
+//           type: 'success',
+//           message: `Successfully registered: ${data.name} with RFID number: ${data.rfid_number}!`,
+//         });
+//         setTimeout(() => {
+//           navigate('/login');
+//         }, 1500);
+//       } else {
+//         setNotification({
+//           type: 'error',
+//           message: 'Registration failed. Please try again.',
+//         });
+//       }
+//     } catch (error) {
+//       setNotification({
+//         type: 'error',
+//         message: 'An error occurred. Please check your connection.',
+//       });
+//     }
+//   };
+
+//   const closeNotification = () => {
+//     setNotification(null);
+//   };
+
+//   return (
+//     <div style={styles.registerPage}>
+//       <div style={styles.registerContainer}>
+//         <div style={styles.registerLeft}>
+//           <svg style={styles.arcadePixel} viewBox="0 0 48 48">
+//             <rect x="6" y="18" width="36" height="12" rx="6" fill="#b266ff" stroke="#fff" strokeWidth="2" />
+//             <circle cx="16" cy="24" r="3" fill="#fff" />
+//             <circle cx="32" cy="24" r="3" fill="#fff" />
+//             <rect x="22" y="22" width="4" height="4" fill="#fff" />
+//           </svg>
+//           <div style={styles.registerTitle}>Welcome to ArPi</div>
+//           <div style={styles.registerDescription}>
+//             Enter the world of ArPi!<br />
+//             Register with your name and RFID Number.<br />
+//             <span style={{ fontSize: '0.9em', color: '#fff', opacity: 0.7 }}>
+//               A Raspberry Pi Arcade Game
+//             </span>
+//           </div>
+//         </div>
+//         <div style={styles.registerRight}>
+//           <form style={styles.registerForm} onSubmit={handleSubmit}>
+//             <h1 style={styles.registerFormTitle}>Register</h1>
+//             <div style={{ height: 24 }} /> {/* Spacer */}
+
+//             <input
+//               type="text"
+//               placeholder="Name"
+//               value={name}
+//               onChange={(e) => setName(e.target.value)}
+//               required
+//               style={{
+//                 ...styles.input,
+//                 fontSize: '1.2rem',
+//                 letterSpacing: '2px',
+//                 padding: '14px 0',
+//               }}
+//             />
+//             <div style={{ height: 24 }} /> {/* Spacer */}
+//             <input
+//               type="text"
+//               placeholder="RFID Number"
+//               value={rfidNumber}
+//               onChange={(e) => setRfidNumber(e.target.value)}
+//               required
+//               style={{
+//                 ...styles.input,
+//                 fontSize: '1.2rem',
+//                 letterSpacing: '2px',
+//                 padding: '14px 0',
+//               }}
+//             />
+//             <div style={{ height: 24 }} /> {/* Spacer */}
+//             <button type="submit" style={styles.button}>Register</button>
+//             <div style={{ height: 24 }} /> {/* Spacer */}
+//             <div style={styles.registerFooter}>Powered by Project-Arpi</div>
+//             <div style={{ marginTop: '18px', textAlign: 'center' }}>
+//               <span style={{ color: '#b266ff', fontSize: '1rem', cursor: 'pointer', textDecoration: 'underline' }}
+//                 onClick={() => navigate('/login')}>
+//                 I already have an account
+//               </span>
+//             </div>
+//               <div style={{ height: 24 }} /> {/* Spacer */}
+//           </form>
+
+//         </div>
+//       </div>
+
+
+//       {notification && (
+//         <div style={{ ...styles.notification, ...(notification.type === 'error' ? styles.notificationError : {}) }}>
+//           <div style={styles.notificationMessage}>{notification.message}</div>
+//           <button style={styles.notificationBtn} onClick={closeNotification}>OK</button>
+//         </div>
+//       )}
+
+//     </div>
+
+
+//   );
+// };
+
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 const Register = () => {
   const [name, setName] = useState('');
-  const [rfidNumber, setRfidNumber] = useState('');
+  const [isScanning, setIsScanning] = useState(false);
   const [notification, setNotification] = useState(null);
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await axios.post('http://localhost:8000/create-players/', {
-        name: name,
-        rfid_number: rfidNumber,
+  const handleRfidScan = async () => {
+    if (!name.trim()) {
+      setNotification({
+        type: 'error',
+        message: 'Please enter your name before scanning your RFID.',
       });
-      if (response.status === 200) {
-        const data = response.data;
-        setNotification({
-          type: 'success',
-          message: `Successfully registered: ${data.name} with RFID number: ${data.rfid_number}!`,
+      return;
+    }
+
+    setIsScanning(true);
+    setNotification({
+      type: 'info',
+      message: 'Please tap your RFID card on the scanner...',
+    });
+
+    try {
+      const scanResponse = await axios.post('http://localhost:3001/rfid-scan');
+      if (scanResponse.data.success) {
+        const rfidUid = scanResponse.data.uid;
+
+        // Proceed to register the user with the scanned RFID
+        const response = await axios.post('http://localhost:3001/rfid-register', {
+          rfid: rfidUid,
+          name: name,
         });
-        setTimeout(() => {
-          navigate('/login');
-        }, 1500);
+
+        if (response.status === 200) {
+          setNotification({
+            type: 'success',
+            message: `Successfully registered: ${name} with RFID: ${rfidUid}`,
+          });
+          setTimeout(() => {
+            navigate('/login');
+          }, 1500);
+        }
+      }
+    } catch (error) {
+      if (error.response && error.response.status === 400) {
+        setNotification({
+          type: 'error',
+          message: 'RFID already registered. Please use a different RFID.',
+        });
       } else {
         setNotification({
           type: 'error',
-          message: 'Registration failed. Please try again.',
+          message: 'An error occurred. Please check your connection.',
         });
       }
-    } catch (error) {
-      setNotification({
-        type: 'error',
-        message: 'An error occurred. Please check your connection.',
-      });
+    } finally {
+      setIsScanning(false);
     }
   };
 
@@ -55,16 +203,16 @@ const Register = () => {
           <div style={styles.registerTitle}>Welcome to ArPi</div>
           <div style={styles.registerDescription}>
             Enter the world of ArPi!<br />
-            Register with your name and RFID Number.<br />
+            Register with your name and RFID.<br />
             <span style={{ fontSize: '0.9em', color: '#fff', opacity: 0.7 }}>
               A Raspberry Pi Arcade Game
             </span>
           </div>
         </div>
         <div style={styles.registerRight}>
-          <form style={styles.registerForm} onSubmit={handleSubmit}>
+          <form style={styles.registerForm} onSubmit={(e) => e.preventDefault()}>
             <h1 style={styles.registerFormTitle}>Register</h1>
-            <div style={{ height: 24 }} /> {/* Spacer */}
+            <div style={{ height: 24 }} /> 
 
             <input
               type="text"
@@ -79,23 +227,19 @@ const Register = () => {
                 padding: '14px 0',
               }}
             />
-            <div style={{ height: 24 }} /> {/* Spacer */}
-            <input
-              type="text"
-              placeholder="RFID Number"
-              value={rfidNumber}
-              onChange={(e) => setRfidNumber(e.target.value)}
-              required
+            <div style={{ height: 24 }} /> 
+            <button
+              type="button"
               style={{
-                ...styles.input,
-                fontSize: '1.2rem',
-                letterSpacing: '2px',
-                padding: '14px 0',
+                ...styles.button,
+                ...(isScanning ? styles.buttonScanning : {}),
               }}
-            />
-            <div style={{ height: 24 }} /> {/* Spacer */}
-            <button type="submit" style={styles.button}>Register</button>
-            <div style={{ height: 24 }} /> {/* Spacer */}
+              onClick={handleRfidScan}
+              disabled={isScanning}
+            >
+              {isScanning ? 'Scanning...' : 'Scan RFID to Register'}
+            </button>
+            <div style={{ height: 24 }} /> 
             <div style={styles.registerFooter}>Powered by Project-Arpi</div>
             <div style={{ marginTop: '18px', textAlign: 'center' }}>
               <span style={{ color: '#b266ff', fontSize: '1rem', cursor: 'pointer', textDecoration: 'underline' }}
@@ -103,12 +247,10 @@ const Register = () => {
                 I already have an account
               </span>
             </div>
-              <div style={{ height: 24 }} /> {/* Spacer */}
+            <div style={{ height: 24 }} /> 
           </form>
-
         </div>
       </div>
-
 
       {notification && (
         <div style={{ ...styles.notification, ...(notification.type === 'error' ? styles.notificationError : {}) }}>
@@ -116,10 +258,7 @@ const Register = () => {
           <button style={styles.notificationBtn} onClick={closeNotification}>OK</button>
         </div>
       )}
-
     </div>
-
-
   );
 };
 
@@ -141,8 +280,6 @@ const styles = {
     background: 'rgba(18, 0, 26, 0.5)',
     overflow: 'hidden',
     backdropFilter: 'blur(4px)',
-
-
   },
   registerLeft: {
     flex: 1.2,

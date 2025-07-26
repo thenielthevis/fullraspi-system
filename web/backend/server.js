@@ -177,6 +177,40 @@ app.get("/players/rfid/:rfid", (req, res) => {
   });
 });
 
+// API: Register new RFID or check if it exists
+app.post("/rfid-register", (req, res) => {
+  const { rfid, name } = req.body;
+
+  if (!rfid || !name) {
+    return res.status(400).json({ error: "Missing RFID or name parameter" });
+  }
+
+  // Check if the RFID already exists in the database
+  const checkQuery = "SELECT id FROM users WHERE uid = ?";
+  db.get(checkQuery, [rfid], (err, row) => {
+    if (err) {
+      console.error("Database error:", err);
+      return res.status(500).json({ error: "Database error" });
+    }
+
+    if (row) {
+      return res.status(400).json({ error: "RFID already registered" });
+    }
+
+    // If RFID doesn't exist, register it
+    const insertQuery = "INSERT INTO users (uid, name, credit, points) VALUES (?, ?, 0, 0)";
+    db.run(insertQuery, [rfid, name], function (err) {
+      if (err) {
+        console.error("Database error:", err);
+        return res.status(500).json({ error: "Database error" });
+      }
+
+      console.log(`[DB] Registered new RFID: ${rfid} for user: ${name}`);
+      res.json({ success: true, message: "RFID registered successfully", userId: this.lastID });
+    });
+  });
+});
+
 // API: Deduct points from player
 app.post("/players/deduct_points/", (req, res) => {
   const { rfid_number, points } = req.query;
