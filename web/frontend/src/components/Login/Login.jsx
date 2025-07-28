@@ -5,10 +5,9 @@ import { useNavigate } from 'react-router-dom';
 const Login = () => {
   const [notification, setNotification] = useState(null);
   const [isScanning, setIsScanning] = useState(false);
-  const [showAdminModal, setShowAdminModal] = useState(false);
-  const [adminName, setAdminName] = useState('');
-  const [adminUid, setAdminUid] = useState('');
-  const [adminError, setAdminError] = useState(null);
+  const [showManualLogin, setShowManualLogin] = useState(false);
+  const [manualName, setManualName] = useState("");
+  const [manualUid, setManualUid] = useState("");
   const navigate = useNavigate();
 
   const handleRfidScan = async () => {
@@ -68,41 +67,39 @@ const Login = () => {
     }
   };
 
-
-  const closeNotification = () => {
-    setNotification(null);
-  };
-
-  // Admin login handler
-  const handleAdminLogin = async (e) => {
+  // Manual login handler
+  const handleManualLogin = async (e) => {
     e.preventDefault();
-    setAdminError(null);
-    if (!adminName || !adminUid) {
-      setAdminError('Please enter both name and UID.');
+    if (!manualName || !manualUid) {
+      setNotification({ type: 'error', message: 'Please enter both name and UID.' });
       return;
     }
     try {
-      const playerResponse = await axios.get(`http://localhost:3001/players/rfid/${adminUid}`);
+      const playerResponse = await axios.get(`http://localhost:3001/players/rfid/${manualUid}`);
       if (playerResponse.status === 200) {
         const playerData = playerResponse.data;
-        // Check if name matches and is admin
-        if (
-          playerData.is_admin &&
-          playerData.name.toLowerCase() === adminName.toLowerCase()
-        ) {
-          localStorage.setItem('playerData', JSON.stringify(playerData));
-          localStorage.setItem('rfid', adminUid);
-          setShowAdminModal(false);
+        if (playerData.name.toLowerCase() !== manualName.toLowerCase()) {
+          setNotification({ type: 'error', message: 'Name and UID do not match.' });
+          return;
+        }
+        localStorage.setItem('playerData', JSON.stringify(playerData));
+        localStorage.setItem('rfid', manualUid);
+        setShowManualLogin(false);
+        if (playerData.is_admin) {
           navigate('/admin-dashboard');
         } else {
-          setAdminError('Invalid admin credentials.');
+          navigate('/');
         }
       } else {
-        setAdminError('Admin not found.');
+        setNotification({ type: 'error', message: 'User not found.' });
       }
     } catch (error) {
-      setAdminError('Invalid admin credentials or UID not found.');
+      setNotification({ type: 'error', message: 'User not found or connection error.' });
     }
+  };
+
+  const closeNotification = () => {
+    setNotification(null);
   };
 
   return (
@@ -144,19 +141,19 @@ const Login = () => {
               {isScanning ? 'Scanning...' : 'Scan RFID to Log In'}
             </button>
             <div style={{ height: 16 }} />
-            {/* Admin Login Button */}
             <button
               type="button"
               style={{
                 ...styles.button,
-                background: 'linear-gradient(90deg, #ff8042 0%, #ffc658 100%)',
+                background: 'linear-gradient(90deg, #ffbb28 0%, #ffc658 100%)',
                 color: '#240046',
-                marginTop: '8px',
                 fontWeight: 'bold',
+                marginTop: '8px',
+                marginBottom: '8px',
               }}
-              onClick={() => setShowAdminModal(true)}
+              onClick={() => setShowManualLogin(true)}
             >
-              Admin Login
+              Login without RFID
             </button>
             <div style={{ height: 24 }} /> {/* Spacer */}
             <div style={styles.loginFooter}>Powered by Project-Arpi</div>
@@ -166,6 +163,7 @@ const Login = () => {
                 I don't have an account yet
               </span>
             </div>
+
             <div style={{ marginTop: '18px', textAlign: 'center' }}>
               <span style={{ color: '#b266ff', fontSize: '1rem', cursor: 'pointer', textDecoration: 'underline' }}
                 onClick={() => navigate('/')}> 
@@ -177,8 +175,8 @@ const Login = () => {
         </div>
       </div>
 
-      {/* Admin Login Modal */}
-      {showAdminModal && (
+      {/* Manual Login Modal */}
+      {showManualLogin && (
         <div style={{
           position: 'fixed',
           top: 0,
@@ -192,80 +190,75 @@ const Login = () => {
           justifyContent: 'center',
         }}>
           <form
+            onSubmit={handleManualLogin}
             style={{
               background: '#fff',
               borderRadius: '16px',
               padding: '2rem',
               minWidth: '320px',
-              boxShadow: '0 4px 32px #a259ff44',
+              boxShadow: '0 4px 32px #b266ff',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              position: 'relative',
+              color: '#240046',
+              fontFamily: "'Press Start 2P', 'Orbitron', 'Segoe UI', Arial, sans-serif",
             }}
-            onSubmit={handleAdminLogin}
           >
-            <h2 style={{ color: '#a259ff', marginBottom: '1rem', fontFamily: "'Press Start 2P', Tahoma, Geneva, Verdana, sans-serif" }}>Admin Login</h2>
+            <h2 style={{ color: '#b266ff', marginBottom: '1.5rem', fontSize: '1.2rem' }}>Manual Login</h2>
             <input
               type="text"
-              placeholder="Admin Name"
-              value={adminName}
-              onChange={e => setAdminName(e.target.value)}
+              placeholder="Name"
+              value={manualName}
+              onChange={e => setManualName(e.target.value)}
               style={{
                 ...styles.input,
                 marginBottom: '1rem',
                 color: '#240046',
                 background: '#f3eaff',
-                border: '2px solid #a259ff',
+                border: '2px solid #b266ff',
               }}
               autoFocus
             />
             <input
               type="text"
-              placeholder="Admin UID"
-              value={adminUid}
-              onChange={e => setAdminUid(e.target.value)}
+              placeholder="UID"
+              value={manualUid}
+              onChange={e => setManualUid(e.target.value)}
               style={{
                 ...styles.input,
-                marginBottom: '1rem',
+                marginBottom: '1.5rem',
                 color: '#240046',
                 background: '#f3eaff',
-                border: '2px solid #a259ff',
+                border: '2px solid #b266ff',
               }}
             />
-            {adminError && (
-              <div style={{ color: '#ff6b6b', marginBottom: '1rem', fontWeight: 'bold' }}>{adminError}</div>
-            )}
-            <button
-              type="submit"
-              style={{
-                ...styles.button,
-                background: 'linear-gradient(90deg, #a259ff 0%, #ff8042 100%)',
-                color: '#fff',
-                fontWeight: 'bold',
-                marginBottom: '0.5rem',
-              }}
-            >
-              Login as Admin
-            </button>
-            <button
-              type="button"
-              style={{
-                ...styles.button,
-                background: '#eee',
-                color: '#a259ff',
-                fontWeight: 'bold',
-                marginTop: '0.5rem',
-              }}
-              onClick={() => {
-                setShowAdminModal(false);
-                setAdminName('');
-                setAdminUid('');
-                setAdminError(null);
-              }}
-            >
-              Cancel
-            </button>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button
+                type="submit"
+                style={{
+                  ...styles.button,
+                  background: 'linear-gradient(90deg, #b266ff 0%, #6c2ebf 100%)',
+                  color: '#fff',
+                  fontWeight: 'bold',
+                  minWidth: '100px',
+                }}
+              >
+                Login
+              </button>
+              <button
+                type="button"
+                style={{
+                  ...styles.button,
+                  background: 'linear-gradient(90deg, #ff6b6b 0%, #ffbb28 100%)',
+                  color: '#240046',
+                  fontWeight: 'bold',
+                  minWidth: '100px',
+                }}
+                onClick={() => setShowManualLogin(false)}
+              >
+                Cancel
+              </button>
+            </div>
           </form>
         </div>
       )}

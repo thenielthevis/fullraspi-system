@@ -1,6 +1,6 @@
 // API: Get all players (for analytics dashboard)
 app.get("/players/all", (req, res) => {
-  const query = "SELECT id, name, uid, credit, points FROM users";
+  const query = "SELECT id, name, uid, credit, points, is_admin FROM users";
   db.all(query, [], (err, rows) => {
     if (err) {
       console.error('Database error:', err);
@@ -13,7 +13,7 @@ app.get("/players/all", (req, res) => {
       rfid_number: row.uid,
       credit: row.credit,
       points: row.points,
-      is_admin: row.name && (row.name.toLowerCase() === 'admin' || row.uid === 'ADMIN_UID')
+      is_admin: !!row.is_admin
     }));
     res.json(players);
   });
@@ -166,22 +166,47 @@ app.post("/coin-stop", (req, res) => {
 });
 
 // API: Get player by RFID
+
+// Manual login route: POST /login-manual
+app.post("/login-manual", (req, res) => {
+  const { name, uid } = req.body;
+  if (!name || !uid) {
+    return res.status(400).json({ error: "Missing name or uid parameter" });
+  }
+  const query = "SELECT id, name, uid, credit, points, is_admin FROM users WHERE uid = ? AND LOWER(name) = LOWER(?)";
+  db.get(query, [uid, name], (err, row) => {
+    if (err) {
+      console.error('Database error:', err);
+      return res.status(500).json({ error: "Database error" });
+    }
+    if (!row) {
+      return res.status(404).json({ error: "User not found or name/uid mismatch" });
+    }
+    const playerData = {
+      id: row.id,
+      name: row.name,
+      uid: row.uid,
+      rfid_number: row.uid,
+      credit: row.credit,
+      points: row.points,
+      is_admin: !!row.is_admin
+    };
+    console.log(`[DB] Manual login: ${row.name} (${row.uid})`);
+    res.json(playerData);
+  });
+});
+
 app.get("/players/rfid/:rfid", (req, res) => {
   const rfid = req.params.rfid;
-  
-  const query = "SELECT id, name, uid, credit, points FROM users WHERE uid = ?";
-  
+  const query = "SELECT id, name, uid, credit, points, is_admin FROM users WHERE uid = ?";
   db.get(query, [rfid], (err, row) => {
     if (err) {
       console.error('Database error:', err);
       return res.status(500).json({ error: "Database error" });
     }
-    
     if (!row) {
       return res.status(404).json({ error: "RFID not registered" });
     }
-    
-    // Return player data with is_admin flag (you can modify this logic as needed)
     const playerData = {
       id: row.id,
       name: row.name,
@@ -189,9 +214,8 @@ app.get("/players/rfid/:rfid", (req, res) => {
       rfid_number: row.uid, // Add this for frontend compatibility
       credit: row.credit,
       points: row.points,
-      is_admin: row.name.toLowerCase() === 'admin' || row.uid === 'ADMIN_UID' // Modify this condition as needed
+      is_admin: !!row.is_admin
     };
-    
     console.log(`[DB] Player found: ${row.name} (${row.uid})`);
     res.json(playerData);
   });
