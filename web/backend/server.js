@@ -1,23 +1,3 @@
-// API: Get all players (for analytics dashboard)
-app.get("/players/all", (req, res) => {
-  const query = "SELECT id, name, uid, credit, points FROM users";
-  db.all(query, [], (err, rows) => {
-    if (err) {
-      console.error('Database error:', err);
-      return res.status(500).json({ error: "Database error" });
-    }
-    // Map rows to frontend format
-    const players = rows.map(row => ({
-      id: row.id,
-      name: row.name,
-      rfid_number: row.uid,
-      credit: row.credit,
-      points: row.points,
-      is_admin: row.name && (row.name.toLowerCase() === 'admin' || row.uid === 'ADMIN_UID')
-    }));
-    res.json(players);
-  });
-});
 const express = require("express");
 const cors = require("cors");
 const mqtt = require("mqtt");
@@ -218,7 +198,7 @@ app.post("/rfid-register", (req, res) => {
     }
 
     // If RFID doesn't exist, register it
-    const insertQuery = "INSERT INTO users (uid, name, credit, points) VALUES (?, ?, 0, 0)";
+    const insertQuery = "INSERT INTO users (uid, name, credit, points, is_admin) VALUES (?, ?, 0, 0, 0)";
     db.run(insertQuery, [rfid, name], function (err) {
       if (err) {
         console.error("Database error:", err);
@@ -282,6 +262,27 @@ app.get("/status", (req, res) => {
     rfid_scanning: pendingRfidRequest !== null,
     coin_waiting: pendingCoinRequest !== null,
     coin_detection_active: coinDetectionActive
+  });
+});
+
+// API: Get all players (for analytics dashboard)
+app.get("/players/all", (req, res) => {
+  const query = "SELECT id, name, uid, credit, points FROM users";
+  db.all(query, [], (err, rows) => {
+    if (err) {
+      console.error('Database error:', err);
+      return res.status(500).json({ error: "Database error" });
+    }
+    // Map rows to frontend format
+    const players = rows.map(row => ({
+      id: row.id,
+      name: row.name,
+      rfid_number: row.uid,
+      credit: row.credit,
+      points: row.points,
+      is_admin: row.name && (row.name.toLowerCase() === 'admin' || row.uid === 'ADMIN_UID')
+    }));
+    res.json(players);
   });
 });
 

@@ -3,6 +3,7 @@ import numpy as np
 import math
 import time
 from picamera2 import Picamera2
+import pygame
 
 # ========== CAMERA SETUP ==========
 FRAME_WIDTH, FRAME_HEIGHT = 1280, 960
@@ -309,20 +310,25 @@ while True:
     if len(valid_sectors) == 3 and balls_settled:
         print(f"\n🎯 GAME COMPLETE! All 3 balls detected with valid sectors:")
         print(f"Final result: {sectors_string}")
-        
-        
+          
+        # Play audio for each detected ball
+        pygame.mixer.init()
+        pygame.mixer.music.load("c:/Users/nield/PROJECTS/arpi-test-codes/Combined/4Components/ballsdetected.mp3")
+        pygame.mixer.music.play()
+
         cv2.putText(frame, "Press Any Key To commence final round", (20, 160), 
                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
-        
+
         # Draw colorful sector lines and labels
         draw_sectors(frame)
-        
+
         # Draw enhanced disc center
         cv2.circle(frame, DISC_CENTER, VISUAL_CONFIG['center_dot_size'], (255, 255, 255), -1)
         cv2.circle(frame, DISC_CENTER, VISUAL_CONFIG['center_dot_size'] + 2, (0, 0, 0), 2)
-        
+
         # Show final frame
         cv2.imshow("Ball Tracker", frame)
+
         cv2.waitKey(0)  # Wait for any key press
         break
 
