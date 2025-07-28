@@ -1,3 +1,23 @@
+// API: Get all players (for analytics dashboard)
+app.get("/players/all", (req, res) => {
+  const query = "SELECT id, name, uid, credit, points FROM users";
+  db.all(query, [], (err, rows) => {
+    if (err) {
+      console.error('Database error:', err);
+      return res.status(500).json({ error: "Database error" });
+    }
+    // Map rows to frontend format
+    const players = rows.map(row => ({
+      id: row.id,
+      name: row.name,
+      rfid_number: row.uid,
+      credit: row.credit,
+      points: row.points,
+      is_admin: row.name && (row.name.toLowerCase() === 'admin' || row.uid === 'ADMIN_UID')
+    }));
+    res.json(players);
+  });
+});
 const express = require("express");
 const cors = require("cors");
 const mqtt = require("mqtt");

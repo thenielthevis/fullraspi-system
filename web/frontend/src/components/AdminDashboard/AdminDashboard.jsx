@@ -191,95 +191,29 @@ const getCombinedRanking = (players, count = 5) =>
     .slice(0, count);
 
 const AdminDashboard = () => {
+
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  // Static data for analytics
-  const staticTopPlayers = [
-    { name: 'Player1', value: 150 },
-    { name: 'Player2', value: 120 },
-    { name: 'Player3', value: 95 },
-    { name: 'Player4', value: 80 },
-    { name: 'Player5', value: 65 }
-  ];
-
-  const staticPointsDistribution = [
-    { name: 'Player1', value: 150 },
-    { name: 'Player2', value: 120 },
-    { name: 'Player3', value: 95 },
-    { name: 'Player4', value: 80 },
-    { name: 'Player5', value: 65 },
-    { name: 'Others', value: 190 }
-  ];
-
-  // Daily Active Users data
-  const dauData = [
-    { day: 'Mon', users: 45 },
-    { day: 'Tue', users: 52 },
-    { day: 'Wed', users: 48 },
-    { day: 'Thu', users: 61 },
-    { day: 'Fri', users: 78 },
-    { day: 'Sat', users: 89 },
-    { day: 'Sun', users: 73 }
-  ];
-
-  // total balls drop data
-  const sessionData = [
-    { month: 'Jan', total: 25 },
-    { month: 'Feb', total: 28 },
-    { month: 'Mar', total: 32 },
-    { month: 'Apr', total: 29 },
-    { month: 'May', total: 35 },
-    { month: 'Jun', total: 31 }
-  ];
-
-  // Games Played data
-  const gamesData = [
-    { week: 'Week 1', games: 142 },
-    { week: 'Week 2', games: 158 },
-    { week: 'Week 3', games: 176 },
-    { week: 'Week 4', games: 164 },
-    { week: 'Week 5', games: 189 },
-    { week: 'Week 6', games: 203 }
-  ];
-
-  // Peak Play Times data
-  const peakTimesData = [
-    { hour: '6AM', activity: 5 },
-    { hour: '8AM', activity: 12 },
-    { hour: '10AM', activity: 18 },
-    { hour: '12PM', activity: 25 },
-    { hour: '2PM', activity: 35 },
-    { hour: '4PM', activity: 42 },
-    { hour: '6PM', activity: 58 },
-    { hour: '8PM', activity: 67 },
-    { hour: '10PM', activity: 45 },
-    { hour: '12AM', activity: 23 }
-  ];
-
+  // Fetch players from backend server.js
   useEffect(() => {
     const fetchPlayers = async () => {
       try {
         setLoading(true);
-        const response = await axios.get('http://localhost:8000/players/');
-        console.log('Players data:', response.data); // Debug log
+        // Use the correct backend port (3001)
+        const response = await axios.get('http://localhost:3001/players/all');
         setPlayers(response.data);
         setError(null);
       } catch (err) {
-        console.error('Error fetching players:', err);
         setError('Failed to load players. Please try again.');
       } finally {
         setLoading(false);
       }
     };
-
     fetchPlayers();
   }, []);
-
-  const mostPlayedData = staticTopPlayers;
-  const pointsRankingData = staticPointsDistribution;
 
  // Logout handler
   const handleLogout = () => {
