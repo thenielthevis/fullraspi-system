@@ -5,6 +5,10 @@ import { useNavigate } from 'react-router-dom';
 const Login = () => {
   const [notification, setNotification] = useState(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [showAdminModal, setShowAdminModal] = useState(false);
+  const [adminName, setAdminName] = useState('');
+  const [adminUid, setAdminUid] = useState('');
+  const [adminError, setAdminError] = useState(null);
   const navigate = useNavigate();
 
   const handleRfidScan = async () => {
@@ -64,8 +68,41 @@ const Login = () => {
     }
   };
 
+
   const closeNotification = () => {
     setNotification(null);
+  };
+
+  // Admin login handler
+  const handleAdminLogin = async (e) => {
+    e.preventDefault();
+    setAdminError(null);
+    if (!adminName || !adminUid) {
+      setAdminError('Please enter both name and UID.');
+      return;
+    }
+    try {
+      const playerResponse = await axios.get(`http://localhost:3001/players/rfid/${adminUid}`);
+      if (playerResponse.status === 200) {
+        const playerData = playerResponse.data;
+        // Check if name matches and is admin
+        if (
+          playerData.is_admin &&
+          playerData.name.toLowerCase() === adminName.toLowerCase()
+        ) {
+          localStorage.setItem('playerData', JSON.stringify(playerData));
+          localStorage.setItem('rfid', adminUid);
+          setShowAdminModal(false);
+          navigate('/admin-dashboard');
+        } else {
+          setAdminError('Invalid admin credentials.');
+        }
+      } else {
+        setAdminError('Admin not found.');
+      }
+    } catch (error) {
+      setAdminError('Invalid admin credentials or UID not found.');
+    }
   };
 
   return (
@@ -106,6 +143,21 @@ const Login = () => {
             >
               {isScanning ? 'Scanning...' : 'Scan RFID to Log In'}
             </button>
+            <div style={{ height: 16 }} />
+            {/* Admin Login Button */}
+            <button
+              type="button"
+              style={{
+                ...styles.button,
+                background: 'linear-gradient(90deg, #ff8042 0%, #ffc658 100%)',
+                color: '#240046',
+                marginTop: '8px',
+                fontWeight: 'bold',
+              }}
+              onClick={() => setShowAdminModal(true)}
+            >
+              Admin Login
+            </button>
             <div style={{ height: 24 }} /> {/* Spacer */}
             <div style={styles.loginFooter}>Powered by Project-Arpi</div>
             <div style={{ marginTop: '18px', textAlign: 'center' }}>
@@ -114,17 +166,109 @@ const Login = () => {
                 I don't have an account yet
               </span>
             </div>
-
-               <div style={{ marginTop: '18px', textAlign: 'center' }}>
+            <div style={{ marginTop: '18px', textAlign: 'center' }}>
               <span style={{ color: '#b266ff', fontSize: '1rem', cursor: 'pointer', textDecoration: 'underline' }}
-                onClick={() => navigate('/')}>
+                onClick={() => navigate('/')}> 
                 Go back to homepage
               </span>
             </div>
-              <div style={{ height: 24 }} /> {/* Spacer */}
+            <div style={{ height: 24 }} /> {/* Spacer */}
           </div>
         </div>
       </div>
+
+      {/* Admin Login Modal */}
+      {showAdminModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          background: 'rgba(36,0,70,0.7)',
+          zIndex: 2000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+          <form
+            style={{
+              background: '#fff',
+              borderRadius: '16px',
+              padding: '2rem',
+              minWidth: '320px',
+              boxShadow: '0 4px 32px #a259ff44',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              position: 'relative',
+            }}
+            onSubmit={handleAdminLogin}
+          >
+            <h2 style={{ color: '#a259ff', marginBottom: '1rem', fontFamily: "'Press Start 2P', Tahoma, Geneva, Verdana, sans-serif" }}>Admin Login</h2>
+            <input
+              type="text"
+              placeholder="Admin Name"
+              value={adminName}
+              onChange={e => setAdminName(e.target.value)}
+              style={{
+                ...styles.input,
+                marginBottom: '1rem',
+                color: '#240046',
+                background: '#f3eaff',
+                border: '2px solid #a259ff',
+              }}
+              autoFocus
+            />
+            <input
+              type="text"
+              placeholder="Admin UID"
+              value={adminUid}
+              onChange={e => setAdminUid(e.target.value)}
+              style={{
+                ...styles.input,
+                marginBottom: '1rem',
+                color: '#240046',
+                background: '#f3eaff',
+                border: '2px solid #a259ff',
+              }}
+            />
+            {adminError && (
+              <div style={{ color: '#ff6b6b', marginBottom: '1rem', fontWeight: 'bold' }}>{adminError}</div>
+            )}
+            <button
+              type="submit"
+              style={{
+                ...styles.button,
+                background: 'linear-gradient(90deg, #a259ff 0%, #ff8042 100%)',
+                color: '#fff',
+                fontWeight: 'bold',
+                marginBottom: '0.5rem',
+              }}
+            >
+              Login as Admin
+            </button>
+            <button
+              type="button"
+              style={{
+                ...styles.button,
+                background: '#eee',
+                color: '#a259ff',
+                fontWeight: 'bold',
+                marginTop: '0.5rem',
+              }}
+              onClick={() => {
+                setShowAdminModal(false);
+                setAdminName('');
+                setAdminUid('');
+                setAdminError(null);
+              }}
+            >
+              Cancel
+            </button>
+          </form>
+        </div>
+      )}
 
       {notification && (
         <div style={{
