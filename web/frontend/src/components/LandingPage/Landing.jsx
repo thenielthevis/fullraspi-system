@@ -120,6 +120,14 @@ const LandingPage = () => {
     }
   }, [navigate]);
 
+  useEffect(() => {
+    axios
+    .get('http://localhost:3001/players/all',)
+    .then((response) => {
+      players = response.data;
+    })
+  }, []);
+
   // Claim prize logic
   const claimPrize = async (prize) => {
     if (!user) {
@@ -163,8 +171,16 @@ const LandingPage = () => {
             <span style={styles.pointsIcon}>⭐</span>
             <span>{userPoints} PTS</span>
           </div>
-           <button style={styles.LoginBtn} onClick={handleLoginRedirect}>Log In</button> 
-           <button style={styles.SignupBtn} onClick={() => navigate('/register')}>Register</button>
+          ({(user && !user.is_admin) ? (
+              <button style={styles.LoginBtn} >HI! {user.name}</button>
+          ) : (
+            <>
+              <button style={styles.LoginBtn} onClick={handleLoginRedirect}>Log In</button>
+
+              <button style={styles.SignupBtn} onClick={() => navigate('/register')}>Register</button>
+            </>
+          )})
+           
         </div>
       </div>
 
