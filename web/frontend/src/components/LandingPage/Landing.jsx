@@ -42,23 +42,13 @@ const prizes = [
   },
 ];
 
-const players = [
-  { id: 1, name: "Alice", points: 120 },
-  { id: 2, name: "Bob", points: 110 },
-  { id: 3, name: "Charlie", points: 95 },
-  { id: 4, name: "Diana", points: 80 },
-  { id: 5, name: "Eve", points: 75 },
-  { id: 6, name: "Frank", points: 65 },
-  { id: 7, name: "Grace", points: 50 },
-  { id: 8, name: "Henry", points: 45 },
-];
-
 const LandingPage = () => {
   const [activeSection, setActiveSection] = useState("hero");
   const [currentPrizeIndex, setCurrentPrizeIndex] = useState(0);
   const [isVisible, setIsVisible] = useState({});
   const [userPoints, setUserPoints] = useState(0); 
   const [user, setUser] = useState(null);
+  const [players, setPlayers] = useState([]);
   const navigate = useNavigate();
 
   const scrollToSection = (sectionId) => {
@@ -120,6 +110,17 @@ const LandingPage = () => {
     }
   }, [navigate]);
 
+  useEffect(() => {
+    axios
+    .get('http://localhost:3001/players/all')
+    .then((response) => {
+      setPlayers(response.data);
+    })
+    .catch((error) => {
+      setPlayers([]);
+    });
+  }, []);
+
   // Claim prize logic
   const claimPrize = async (prize) => {
     if (!user) {
@@ -163,8 +164,16 @@ const LandingPage = () => {
             <span style={styles.pointsIcon}>⭐</span>
             <span>{userPoints} PTS</span>
           </div>
-           <button style={styles.LoginBtn} onClick={handleLoginRedirect}>Log In</button> 
-           <button style={styles.SignupBtn} onClick={() => navigate('/register')}>Register</button>
+          ({(user && !user.is_admin) ? (
+              <button style={styles.LoginBtn} >HI! {user.name}</button>
+          ) : (
+            <>
+              <button style={styles.LoginBtn} onClick={handleLoginRedirect}>Log In</button>
+
+              <button style={styles.SignupBtn} onClick={() => navigate('/register')}>Register</button>
+            </>
+          )})
+           
         </div>
       </div>
 

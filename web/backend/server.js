@@ -176,6 +176,17 @@ app.post("/login-manual", (req, res) => {
   });
 });
 
+// FETCH ALL PLAYERS
+app.get("/players/all", (req, res) => {
+  const query = "SELECT * FROM users WHERE is_admin = 0 ORDER BY points DESC" ;
+  db.all(query, [], (err, rows) => {
+    if (err) {
+      return res.status(500).json({ error: "Database error" });
+    }
+    res.json(rows);
+  });
+});
+
 app.get("/players/rfid/:rfid", (req, res) => {
   const rfid = req.params.rfid;
   const query = "SELECT id, name, uid, credit, points, is_admin FROM users WHERE uid = ?";
