@@ -1,3 +1,6 @@
+# ========== INTEGRATED TKINTER + OPENCV DETECTION ========== 
+import tkinter as tk
+from threading import Thread
 import cv2
 import numpy as np
 import math
@@ -5,23 +8,10 @@ import time
 from picamera2 import Picamera2
 import pygame
 
-# ========== CAMERA SETUP ==========
-FRAME_WIDTH, FRAME_HEIGHT = 1280, 960
-picam2 = Picamera2()
-config = picam2.create_preview_configuration(main={"size": (FRAME_WIDTH, FRAME_HEIGHT), "format": "RGB888"})
-picam2.configure(config)
-picam2.start()
-
-# ========== SETTLING TIME CONFIG ==========
-SETTLING_TIME = 4  # seconds to wait after detecting 3 balls
-first_detection_time = None
-balls_settled = False
-
 # ========== DISC CENTER (manually set if needed) ==========
 DISC_CENTER = (615, 430)  # Adjust this to match your actual disc's center
 
 # ========== SECTOR SETUP ==========
-# Custom angle ranges (label, start_angle, end_angle)
 sectors = [
     ("Red",    -35,  23),
     ("Yellow", 25, 80),
@@ -51,7 +41,6 @@ VISUAL_CONFIG = {
     'ball_circle_thickness': 3
 }
 
-# ========== HELPER FUNCTIONS ==========
 def get_sector_label(center):
     dx = center[0] - DISC_CENTER[0]
     dy = DISC_CENTER[1] - center[1]  # Y inverted in image coords
@@ -254,99 +243,110 @@ def get_sectors_as_string(detected_sectors):
     
     return ", ".join(result_parts)
 
-# ========== MAIN LOOP ==========
-while True:
-    frame = picam2.capture_array()
-    hsv = cv2.cvtColor(frame, cv2.COLOR_RGB2HSV)
+class BallDetectionApp(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("Ball Detection")
+        self.geometry("500x300")
+        self.detecting = False
+        self.status_label = tk.Label(self, text="Press Start to Detect Balls", font=("Arial", 18))
+        self.status_label.place(relx=0.5, rely=0.5, anchor="center")
+        self.start_button = tk.Button(self, text="Start Detecting", font=("Arial", 14), command=self.start_detection)
+        self.start_button.place(relx=0.5, rely=0.7, anchor="center")
+        self.protocol("WM_DELETE_WINDOW", self.on_close)
 
-    # Detect all balls and their sectors
-    detected_sectors, ball_count = detect_multiple_balls_and_sectors(frame, hsv)
-    
-    # Get sectors as string for use in other files
-    sectors_string = get_sectors_as_string(detected_sectors)
-    
-    # Display ball count and sectors summary
-    cv2.putText(frame, f"Balls detected: {ball_count}", (20, 40), 
-               cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
-    
-    if detected_sectors:
-        cv2.putText(frame, f"Sectors: {sectors_string}", (20, 80), 
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
-        # Only print during detection phase, not during settling
-        if first_detection_time is None:
-            print(f"Balls in sectors: {sectors_string}")
-    
-    # Check if we have exactly 3 balls with valid sectors
-    valid_sectors = [sector for sector in detected_sectors if sector != "Unknown"]
-    
-    # Handle settling time logic
-    if len(valid_sectors) == 3 and not balls_settled:
-        if first_detection_time is None:
-            first_detection_time = time.time()
-            print(f"🕒 3 balls detected! Waiting {SETTLING_TIME} seconds for balls to settle...")
-        
-        # Calculate remaining time
-        elapsed_time = time.time() - first_detection_time
-        remaining_time = SETTLING_TIME - elapsed_time
-        
-        if remaining_time > 0:
-            # Display countdown
-            cv2.putText(frame, f"Settling... {remaining_time:.1f}s", (20, 120), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 165, 0), 3)
-            cv2.putText(frame, "Balls detected, waiting to settle", (20, 160), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
-        else:
-            balls_settled = True
-            print(f"✅ Balls have settled! Final count validation...")
-            # Print the final result only once when timer completes
-            print(f"🎯 Final ball positions: {sectors_string}")
-    
-    elif len(valid_sectors) != 3:
-        # Reset if ball count changes
+    def start_detection(self):
+        if not self.detecting:
+            self.detecting = True
+            self.status_label.config(text="Detecting...")
+            self.start_button.config(state="disabled")
+            Thread(target=self.run_detection, daemon=True).start()
+
+    def run_detection(self):
+        FRAME_WIDTH, FRAME_HEIGHT = 1280, 960
+        picam2 = Picamera2()
+        config = picam2.create_preview_configuration(main={"size": (FRAME_WIDTH, FRAME_HEIGHT), "format": "RGB888"})
+        picam2.configure(config)
+        picam2.start()
+
+        SETTLING_TIME = 4
         first_detection_time = None
         balls_settled = False
-    
-    # Only proceed with game completion if balls have settled
-    if len(valid_sectors) == 3 and balls_settled:
-        print(f"\n🎯 GAME COMPLETE! All 3 balls detected with valid sectors:")
-        print(f"Final result: {sectors_string}")
-          
-        # Play audio for each detected ball
-        pygame.mixer.init()
-        pygame.mixer.music.load("./assets/sounds/ballsdetected.mp3")
-        pygame.mixer.music.play()
 
-        cv2.putText(frame, "Press Any Key To commence final round", (20, 160), 
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+        while True:
+            frame = picam2.capture_array()
+            hsv = cv2.cvtColor(frame, cv2.COLOR_RGB2HSV)
+            detected_sectors, ball_count = detect_multiple_balls_and_sectors(frame, hsv)
+            sectors_string = get_sectors_as_string(detected_sectors)
+            valid_sectors = [sector for sector in detected_sectors if sector != "Unknown"]
 
-        # Draw colorful sector lines and labels
-        draw_sectors(frame)
+            # Display ball count and sectors summary
+            cv2.putText(frame, f"Balls detected: {ball_count}", (20, 40), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
+            if detected_sectors:
+                cv2.putText(frame, f"Sectors: {sectors_string}", (20, 80), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+                if first_detection_time is None:
+                    print(f"Balls in sectors: {sectors_string}")
 
-        # Draw enhanced disc center
-        cv2.circle(frame, DISC_CENTER, VISUAL_CONFIG['center_dot_size'], (255, 255, 255), -1)
-        cv2.circle(frame, DISC_CENTER, VISUAL_CONFIG['center_dot_size'] + 2, (0, 0, 0), 2)
+            # Handle settling time logic
+            if len(valid_sectors) == 3 and not balls_settled:
+                if first_detection_time is None:
+                    first_detection_time = time.time()
+                    print(f"🕒 3 balls detected! Waiting {SETTLING_TIME} seconds for balls to settle...")
+                elapsed_time = time.time() - first_detection_time
+                remaining_time = SETTLING_TIME - elapsed_time
+                if remaining_time > 0:
+                    cv2.putText(frame, f"Settling... {remaining_time:.1f}s", (20, 120), 
+                                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 165, 0), 3)
+                    cv2.putText(frame, "Balls detected, waiting to settle", (20, 160), 
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+                else:
+                    balls_settled = True
+                    print(f"✅ Balls have settled! Final count validation...")
+                    print(f"🎯 Final ball positions: {sectors_string}")
+            elif len(valid_sectors) != 3:
+                first_detection_time = None
+                balls_settled = False
 
-        # Show final frame
-        cv2.imshow("Ball Tracker", frame)
+            # Only proceed with game completion if balls have settled
+            if len(valid_sectors) == 3 and balls_settled:
+                print(f"\n🎯 GAME COMPLETE! All 3 balls detected with valid sectors:")
+                print(f"Final result: {sectors_string}")
+                pygame.mixer.init()
+                pygame.mixer.music.load("./assets/sounds/ballsdetected.mp3")
+                pygame.mixer.music.play()
+                cv2.putText(frame, "Press Any Key To commence final round", (20, 160), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+                draw_sectors(frame)
+                cv2.circle(frame, DISC_CENTER, VISUAL_CONFIG['center_dot_size'], (255, 255, 255), -1)
+                cv2.circle(frame, DISC_CENTER, VISUAL_CONFIG['center_dot_size'] + 2, (0, 0, 0), 2)
+                cv2.imshow("Ball Tracker", frame)
+                cv2.waitKey(0)
+                cv2.destroyAllWindows()
+                picam2.close()
+                break
 
-        cv2.waitKey(0)  # Wait for any key press
-        break
+            # Draw sector lines and disc center
+            draw_sectors(frame)
+            cv2.circle(frame, DISC_CENTER, VISUAL_CONFIG['center_dot_size'], (255, 255, 255), -1)
+            cv2.circle(frame, DISC_CENTER, VISUAL_CONFIG['center_dot_size'] + 2, (0, 0, 0), 2)
 
-    # Draw colorful sector lines and labels
-    draw_sectors(frame)
+            cv2.imshow("Ball Tracker", frame)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                cv2.destroyAllWindows()
+                picam2.close()
+                break
 
-    # Draw enhanced disc center
-    cv2.circle(frame, DISC_CENTER, VISUAL_CONFIG['center_dot_size'], (255, 255, 255), -1)
-    cv2.circle(frame, DISC_CENTER, VISUAL_CONFIG['center_dot_size'] + 2, (0, 0, 0), 2)
+        self.status_label.config(text="Detection Complete")
+        self.start_button.config(state="normal")
+        self.detecting = False
 
-    # Show output
-    cv2.imshow("Ball Tracker", frame)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+    def on_close(self):
+        cv2.destroyAllWindows()
+        self.destroy()
 
-cv2.destroyAllWindows()
-picam2.close()
-
-
-
-
+# ========== MAIN ENTRY POINT ========== 
+if __name__ == "__main__":
+    app = BallDetectionApp()
+    app.mainloop()
