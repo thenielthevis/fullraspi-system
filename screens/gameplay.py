@@ -153,8 +153,8 @@ class GameplayScreen(tk.Frame):
         ]
         
         # Ball color detection from objectTest.py (restored original)
-        self.lower_ball = np.array([129, 102, 194])
-        self.upper_ball = np.array([179, 255, 255])
+        self.lower_ball = np.array([139, 155, 221])
+        self.upper_ball = np.array([153, 236, 255])
         
         # Visual config from objectTest.py (exact copy)
         self.VISUAL_CONFIG = {

@@ -32,8 +32,8 @@ sectors = [
 ]
 
 # ========== BALL COLOR DETECTION ==========
-lower_ball = np.array([129, 102, 194])
-upper_ball = np.array([179, 255, 255])
+lower_ball = np.array([139, 155, 221])
+upper_ball = np.array([153, 236, 255])
 
 # ========== VISUAL SETTINGS ==========
 VISUAL_CONFIG = {
@@ -313,7 +313,7 @@ while True:
           
         # Play audio for each detected ball
         pygame.mixer.init()
-        pygame.mixer.music.load("c:/Users/nield/PROJECTS/arpi-test-codes/Combined/4Components/ballsdetected.mp3")
+        pygame.mixer.music.load("./assets/sounds/ballsdetected.mp3")
         pygame.mixer.music.play()
 
         cv2.putText(frame, "Press Any Key To commence final round", (20, 160), 
