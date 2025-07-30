@@ -19,7 +19,7 @@ import time
 import paho.mqtt.client as mqtt
 
 # MQTT Configuration
-BROKER_HOST = "192.168.1.28"
+BROKER_HOST = "192.168.154.34"
 BROKER_PORT = 1883
 
 TOPIC_CMDS  = "esp32/control"   # ESP32 subscribes here

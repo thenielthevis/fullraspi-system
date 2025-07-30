@@ -32,8 +32,8 @@ sectors = [
 ]
 
 # ========== BALL COLOR DETECTION ==========
-lower_ball = np.array([129, 102, 194])
-upper_ball = np.array([179, 255, 255])
+lower_ball = np.array([139, 155, 221])
+upper_ball = np.array([153, 236, 255])
 
 # ========== VISUAL SETTINGS ==========
 VISUAL_CONFIG = {

@@ -61,10 +61,10 @@ class ArcadeApp(tk.Tk):
         from TESTCONTROLLER import on_connect, on_message
         self.mqtt_client.on_connect = on_connect
         self.mqtt_client.on_message = on_message
-        self.mqtt_client.connect("192.168.1.28", 1883, keepalive=60)
+        self.mqtt_client.connect("192.168.154.34", 1883, keepalive=60)
         self.mqtt_client.loop_start()
 
-        # Register callback for RFID
+        # Register callback for RFIDCCCCCCCCC
         def on_rfid(uid):
             print(f"RFID UID received: {uid}")
             welcome_screen = self.frames.get("WelcomeScreen")

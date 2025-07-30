@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, Legend, ResponsiveContainer, LineChart, Line, AreaChart, Area } from 'recharts';
+import { BarChart, PieChart, LineChart, AreaChart, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip, Legend, Pie, Cell, XAxis, YAxis, Line, Area, Bar } from 'recharts';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
@@ -11,9 +11,10 @@ const styles = {
     width: '100vw',
     background: 'linear-gradient(120deg, #12001a 0%, #240046 100%)',
     color: 'white',
-    fontFamily: "'Press Start 2P', Tahoma, Geneva, Verdana, sans-serif",
+    fontFamily: "'Orbitron', 'Press Start 2P', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
     overflowX: 'hidden',
     paddingBottom: '3rem',
+    letterSpacing: '0.03em',
   },
   navbar: {
     display: 'flex',
@@ -26,6 +27,9 @@ const styles = {
     zIndex: 1000,
     backdropFilter: 'blur(10px)',
     boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
+    fontFamily: "'Orbitron', 'Press Start 2P', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+    fontSize: '1.3rem',
+    letterSpacing: '0.05em',
   },
   logo: {
     display: 'flex',
@@ -33,6 +37,8 @@ const styles = {
     fontSize: '2.3rem',
     fontWeight: 'bold',
     color: 'white',
+    fontFamily: "'Orbitron', 'Press Start 2P', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+    letterSpacing: '0.08em',
   },
   logoIcon: {
     fontSize: '1.8rem',
@@ -45,11 +51,12 @@ const styles = {
     borderRadius: '10px',
     padding: '0.7rem 1.5rem',
     fontSize: '1rem',
-    fontFamily: "'Press Start 2P', Tahoma, Geneva, Verdana, sans-serif",
+    fontFamily: "'Orbitron', 'Press Start 2P', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
     cursor: 'pointer',
     fontWeight: 700,
     transition: 'background 0.2s',
-    marginLeft: '2rem'
+    marginLeft: '2rem',
+    letterSpacing: '0.04em',
   },
   section: {
     maxWidth: '1500px',
@@ -59,14 +66,16 @@ const styles = {
     borderRadius: '20px',
     boxShadow: '0 6px 32px rgba(162, 89, 255, 0.1)',
     backdropFilter: 'blur(10px)',
+    fontFamily: "'Orbitron', 'Press Start 2P', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
   },
   sectionTitle: {
     color: '#a259ff',
     fontSize: '2.2rem',
     fontWeight: 800,
     marginBottom: '2rem',
-    letterSpacing: '1px',
+    letterSpacing: '0.08em',
     textAlign: 'center',
+    fontFamily: "'Orbitron', 'Press Start 2P', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
   },
   chartsRow: {
     display: 'flex',
@@ -83,6 +92,9 @@ const styles = {
     marginBottom: '2rem',
     boxShadow: '0 4px 20px rgba(162, 89, 255, 0.08)',
     border: '1px solid rgba(162, 89, 255, 0.2)',
+    fontFamily: "'Orbitron', 'Press Start 2P', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+    fontSize: '1.1rem',
+    letterSpacing: '0.04em',
   },
   playerList: {
     background: 'rgba(255,255,255,0.07)',
@@ -91,17 +103,23 @@ const styles = {
     marginTop: '2rem',
     boxShadow: '0 4px 20px rgba(162, 89, 255, 0.08)',
     border: '1px solid rgba(162, 89, 255, 0.2)',
+    fontFamily: "'Orbitron', 'Press Start 2P', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+    fontSize: '1.1rem',
+    letterSpacing: '0.04em',
   },
   playerItem: {
     color: '#c7b6f7',
-    fontSize: '1.1rem',
-    marginBottom: '0.7rem',
+    fontSize: '1.15rem',
+    marginBottom: '1.2rem',
     fontWeight: 500,
     display: 'flex',
     justifyContent: 'space-evenly',
     alignItems: 'center',
-    padding: '0.5rem',
+    padding: '0.8rem 0.5rem',
     borderBottom: '1px solid rgba(162, 89, 255, 0.1)',
+    fontFamily: "'Orbitron', 'Press Start 2P', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+    letterSpacing: '0.04em',
+    lineHeight: 1.5,
   },
   playerName: {
     flex: 1,
@@ -109,38 +127,58 @@ const styles = {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
+    fontFamily: "'Orbitron', 'Press Start 2P', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+    fontSize: '1.1rem',
+    letterSpacing: '0.04em',
+    lineHeight: 1.4,
+    wordBreak: 'break-word',
   },
   playerRfid: {
     flex: 1,
     textAlign: 'center',
     color: '#82ca9d',
     fontSize: '1.1rem',
+    fontFamily: "'Orbitron', 'Press Start 2P', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+    letterSpacing: '0.04em',
+    lineHeight: 1.4,
+    wordBreak: 'break-word',
   },
   playerPoints: {
     flex: 1,
     textAlign: 'center',
     color: '#a259ff',
     fontWeight: 'bold',
+    fontFamily: "'Orbitron', 'Press Start 2P', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+    fontSize: '1.1rem',
+    letterSpacing: '0.04em',
+    lineHeight: 1.4,
+    wordBreak: 'break-word',
   },
   adminBadge: {
     backgroundColor: '#ff8042',
     color: 'white',
     padding: '0.2rem 0.5rem',
     borderRadius: '5px',
-    fontSize: '0.8rem',
+    fontSize: '0.9rem',
     marginLeft: '1rem',
+    fontFamily: "'Orbitron', 'Press Start 2P', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+    letterSpacing: '0.04em',
   },
   loadingText: {
     color: '#a259ff',
     fontSize: '1.2rem',
     textAlign: 'center',
     padding: '2rem',
+    fontFamily: "'Orbitron', 'Press Start 2P', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+    letterSpacing: '0.04em',
   },
   errorText: {
     color: '#ff6b6b',
     fontSize: '1.2rem',
     textAlign: 'center',
     padding: '2rem',
+    fontFamily: "'Orbitron', 'Press Start 2P', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+    letterSpacing: '0.04em',
   },
 };
 
@@ -151,33 +189,45 @@ const getActiveUsersByCredits = (players, count = 5) =>
     .slice(0, count)
     .map(p => ({ name: p.name, credits: p.credits }));
 
-const getTopPlayersByPoints = (players, count = 5) =>
+// Top 5 Active Users (by points)
+const getTopActiveUsers = (players, count = 5) =>
   [...players]
     .sort((a, b) => b.points - a.points)
     .slice(0, count)
-    .map(p => ({ name: p.name, points: p.points }));
+    .map(p => ({ name: p.name, points: p.points, rfid: p.rfid_number }));
 
+// Top 5 Players with Highest Credits
 const getTopPlayersByCredits = (players, count = 5) =>
   [...players]
-    .sort((a, b) => b.credits - a.credits)
+    .sort((a, b) => b.credit - a.credit)
     .slice(0, count)
-    .map(p => ({ name: p.name, credits: p.credits }));
+    .map(p => ({ name: p.name, credit: p.credit, rfid: p.rfid_number }));
 
-const getPlayersWithMoreGamesToPlay = (players, count = 5) =>
+const getPlayersWithMoreGames = (players, count = 5) =>
   [...players]
     .sort((a, b) => b.points - a.points)
     .slice(0, count)
-    .map(p => ({ name: p.name, points: p.points }));
+    .map(p => ({
+      name: p.name,
+      points: p.points,
+      rfid: p.rfid_number
+    }));
 
-// Add this function above your component
+// Most Players with Deducted Points (lowest points)
+const getPlayersWithMostDeductedPoints = (players, count = 5) =>
+  [...players]
+    .sort((a, b) => a.points - b.points)
+    .slice(0, count)
+    .map(p => ({ name: p.name, points: p.points, rfid: p.rfid_number }));
+
+// Weekly Credits Claimed (simulate)
 const getWeeklyCreditsClaimed = (players) => {
-  // Simulate weekly grouping for demo (replace with real grouping if you have week info)
   const weeks = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
   return weeks.map((week, i) => ({
     week,
     credits: players
-      .filter((_, idx) => idx % 4 === i) // distribute players into weeks
-      .reduce((sum, p) => sum + (p.credits || 0), 0)
+      .filter((_, idx) => idx % 4 === i)
+      .reduce((sum, p) => sum + (p.credit || 0), 0)
   }));
 };
 
@@ -302,46 +352,30 @@ const AdminDashboard = () => {
         <div style={styles.chartsRow}>
           {/* 1. Top 5 Active Users (Most Credits) */}
           <div style={styles.chartCard}>
-            <h2 style={{color: '#a259ff'}}>Top 5 Active Users</h2>
+            <h2 style={{color: '#a259ff'}}>Top 5 Active Users (Points)</h2>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={getActiveUsersByCredits(players)}>
+              <BarChart data={getTopActiveUsers(players)}>
                 <XAxis dataKey="name" stroke="#fff" />
                 <YAxis stroke="#fff" />
                 <Tooltip />
-                <Bar dataKey="credits" fill="#00C49F" />
+                <Bar dataKey="points" fill="#00C49F" />
               </BarChart>
             </ResponsiveContainer>
           </div>
-          {/* 2. Top 5 Users with Highest Points */}
+          {/* 2. Top 5 Players with Highest Credits */}
           <div style={styles.chartCard}>
-            <h2 style={{color: '#a259ff'}}>Top 5 Users with Highest Points</h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={getTopPlayersByPoints(players)}>
-                <XAxis dataKey="name" stroke="#fff" />
-                <YAxis stroke="#fff" />
-                <Tooltip />
-                <Area type="monotone" dataKey="points" stroke="#a259ff" fill="#a259ff" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-        
-        {/* Row 2 */}
-        <div style={styles.chartsRow}>
-          {/* 3. Top 5 Players with Highest Credits Balance */}
-          <div style={styles.chartCard}>
-            <h2 style={{color: '#a259ff'}}>Top 5 Players with Highest Credits Balance</h2>
+            <h2 style={{color: '#a259ff'}}>Top 5 Players with Highest Credits</h2>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
                   data={getTopPlayersByCredits(players)}
-                  dataKey="credits"
+                  dataKey="credit"
                   nameKey="name"
                   cx="50%"
                   cy="50%"
                   outerRadius={100}
                   fill="#82ca9d"
-                  label
+                  label={entry => `${entry.name} (${entry.rfid})`}
                 >
                   {getTopPlayersByCredits(players).map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -352,11 +386,15 @@ const AdminDashboard = () => {
               </PieChart>
             </ResponsiveContainer>
           </div>
-          {/* 4. Players with More Games to Play */}
+        </div>
+        
+        {/* Row 2 */}
+        <div style={styles.chartsRow}>
+          {/* 3. Most Players with Deducted Points */}
           <div style={styles.chartCard}>
-            <h2 style={{color: '#a259ff'}}>Players with More Games to Play</h2>
+            <h2 style={{color: '#a259ff'}}>Players with Most Deducted Points</h2>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={getPlayersWithMoreGamesToPlay(players)}>
+              <LineChart data={getPlayersWithMostDeductedPoints(players)}>
                 <XAxis dataKey="name" stroke="#fff" />
                 <YAxis stroke="#fff" />
                 <Tooltip />
@@ -364,23 +402,23 @@ const AdminDashboard = () => {
               </LineChart>
             </ResponsiveContainer>
           </div>
+          {/* 4. Weekly Credits Claimed */}
+          <div style={styles.chartCard}>
+            <h2 style={{color: '#a259ff'}}>Weekly Credits Claimed</h2>
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={getWeeklyCreditsClaimed(players)}>
+                <XAxis dataKey="week" stroke="#fff" />
+                <YAxis stroke="#fff" />
+                <Tooltip />
+                <Area type="monotone" dataKey="credits" stroke="#ffc658" fill="#ffc658" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         </div>
         
         {/* Row 3 */}
         <div style={styles.chartsRow}>
-          {/* 5. Weekly Credits Claimed */}
-          <div style={styles.chartCard}>
-            <h2 style={{color: '#a259ff'}}>Weekly Credits Claimed</h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart layout="vertical" data={getWeeklyCreditsClaimed(players)}>
-                <XAxis type="number" stroke="#fff" />
-                <YAxis dataKey="week" type="category" stroke="#fff" />
-                <Tooltip />
-                <Bar dataKey="credits" fill="#ffc658" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          {/* 6. Top 5 Players (Points + Credits) */}
+          {/* 5. Top 5 Players (Points + Credits) */}
           <div style={styles.chartCard}>
             <h2 style={{color: '#a259ff'}}>Top 5 Players (Points + Credits)</h2>
             <ResponsiveContainer width="100%" height={300}>
@@ -390,6 +428,20 @@ const AdminDashboard = () => {
                 <Tooltip />
                 <Area type="monotone" dataKey="total" stroke="#ffbb28" fill="#ffbb28" />
               </AreaChart>
+            </ResponsiveContainer>
+          </div>
+          {/* 6. Players with Most Games Played (Radar Chart) */}
+          <div style={styles.chartCard}>
+            <h2 style={{color: '#a259ff'}}>Players with Most Games Played</h2>
+            <ResponsiveContainer width="100%" height={300}>
+              <RadarChart data={getPlayersWithMoreGames(players)}>
+                <PolarGrid />
+                <PolarAngleAxis dataKey="name" />
+                <PolarRadiusAxis />
+                <Radar name="Points" dataKey="points" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
+                <Tooltip />
+                <Legend />
+              </RadarChart>
             </ResponsiveContainer>
           </div>
         </div>
@@ -416,7 +468,7 @@ const AdminDashboard = () => {
                     )}
                   </div>
                   <div style={{ flex: 1, textAlign: 'center', color: '#82ca9d', fontSize: '1.1rem' }}>
-                    RFID: {player.rfid_number}
+                    RFID: {player.uid}
                   </div>
                   <div style={styles.playerPoints}>
                     {player.points || 0} pts
