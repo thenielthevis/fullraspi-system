@@ -23,32 +23,32 @@ class WelcomeScreen(tk.Frame):
         title = tk.Label(
             self,
             text="WELCOME TO ARPI",
-            font=("Press Start 2P", 25),
+            font=("Press Start 2P", 32),  # Increased from 25
             fg="#00ffff",
             bg="#000000",
-            pady=20
+            pady=30  # Increased from 20
         )
         title.place(relx=0.5, rely=0.4, anchor="center")
         subtitle = tk.Label(
             self,
             text="SCAN RFID TO BEGIN!",
-            font=("Press Start 2P", 12),
+            font=("Press Start 2P", 16),  # Increased from 12
             fg="#ffffff",
             bg="#000000",
-            pady=10
+            pady=15  # Increased from 10
         )
         subtitle.place(relx=0.5, rely=0.55, anchor="center")
         self.start_button = tk.Button(
             self,
             text="SCAN RFID",
-            font=("Press Start 2P", 15),
+            font=("Press Start 2P", 20),  # Increased from 15
             bg="#000000",
             fg="#00ffff",
             activebackground="#000000",
             activeforeground="#ff66cc",
             relief="flat",
-            padx=30,
-            pady=10,
+            padx=40,  # Increased from 30
+            pady=15,  # Increased from 10
             command=self.start_rfid
         )
         self.start_button.place(relx=0.5, rely=0.7, anchor="center")
@@ -57,14 +57,14 @@ class WelcomeScreen(tk.Frame):
         self.exit_button = tk.Button(
             self,
             text="EXIT",
-            font=("Press Start 2P", 10),
+            font=("Press Start 2P", 14),  # Increased from 10
             bg="#660000",
             fg="#ffffff",
             activebackground="#990000",
             activeforeground="#ffffff",
             relief="flat",
-            padx=20,
-            pady=8,
+            padx=30,  # Increased from 20
+            pady=12,  # Increased from 8
             command=self.exit_application
         )
         self.exit_button.place(relx=0.95, rely=0.95, anchor="se")

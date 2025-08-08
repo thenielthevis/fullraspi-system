@@ -12,93 +12,93 @@ class AddCreditScreen(tk.Frame):
         self.controller = controller
         self.current_uid = None
         self.coin_mode = False
-    # Get screen dimensions for responsive background
-    self.update_idletasks()
-    screen_width = controller.winfo_screenwidth()
-    screen_height = controller.winfo_screenheight()
-    img_path = os.path.join("assets", "sp.png")
-    original_img = Image.open(img_path)
-    resized_img = original_img.resize((screen_width, screen_height), Image.Resampling.LANCZOS)
-    self.bg_image = ImageTk.PhotoImage(resized_img)
-    background_label = tk.Label(self, image=self.bg_image)
-    background_label.place(relwidth=1, relheight=1)
+        # Get screen dimensions for responsive background
+        self.update_idletasks()
+        screen_width = controller.winfo_screenwidth()
+        screen_height = controller.winfo_screenheight()
+        img_path = os.path.join("assets", "sp.png")
+        original_img = Image.open(img_path)
+        resized_img = original_img.resize((screen_width, screen_height), Image.Resampling.LANCZOS)
+        self.bg_image = ImageTk.PhotoImage(resized_img)
+        background_label = tk.Label(self, image=self.bg_image)
+        background_label.place(relwidth=1, relheight=1)
         title = tk.Label(
             self,
             text="ADD CREDIT",
-            font=("Press Start 2P", 25),
+            font=("Press Start 2P", 32),  # Increased from 25
             fg="#00ffff",
             bg="#000000",
-            pady=20
+            pady=30  # Increased from 20
         )
         title.place(relx=0.5, rely=0.2, anchor="center")
         subtitle = tk.Label(
             self,
             text="INSERT COIN OR Proceed",
-            font=("Press Start 2P", 12),
+            font=("Press Start 2P", 16),  # Increased from 12
             fg="#ffffff",
             bg="#000000",
-            pady=10
+            pady=15  # Increased from 10
         )
         subtitle.place(relx=0.5, rely=0.35, anchor="center")
         credit_button = tk.Button(
             self,
             text="INSERT COIN",
-            font=("Press Start 2P", 15),
+            font=("Press Start 2P", 20),  # Increased from 15
             bg="#000000",
             fg="#00ffff",
             activebackground="#000000",
             activeforeground="#ff66cc",
             relief="flat",
-            padx=30,
-            pady=10,
+            padx=40,  # Increased from 30
+            pady=15,  # Increased from 10
             command=self.start_coin_mode
         )
         credit_button.place(relx=0.5, rely=0.5, anchor="center")
         back_button = tk.Button(
             self,
             text="BACK",
-            font=("Press Start 2P", 15),
+            font=("Press Start 2P", 20),  # Increased from 15
             bg="#000000",
             fg="#00ffff",
             activebackground="#000000",
             activeforeground="#ff66cc",
             relief="flat",
-            padx=30,
-            pady=10,
+            padx=40,  # Increased from 30
+            pady=15,  # Increased from 10
             command=lambda: self.controller.show_frame("WelcomeScreen")
         )
         back_button.place(relx=0.5, rely=0.65, anchor="center")
         self.credit_label = tk.Label(
             self,
             text="CREDIT: -",
-            font=("Press Start 2P", 18),
+            font=("Press Start 2P", 24),  # Increased from 18
             fg="#00ff00",
             bg="#000000",
-            pady=10
+            pady=15  # Increased from 10
         )
         self.credit_label.place(relx=0.5, rely=0.42, anchor="center")
         # Store reference to play button
         self.play_button = tk.Button(
             self,
             text="PLAY",
-            font=("Press Start 2P", 15),
+            font=("Press Start 2P", 20),  # Increased from 15
             bg="#000000",
             fg="#00ff00",
             activebackground="#000000",
             activeforeground="#ff66cc",
             relief="flat",
-            padx=30,
-            pady=10,
+            padx=40,  # Increased from 30
+            pady=15,  # Increased from 10
             command=self.play_game
         )
         self.play_button.place(relx=0.5, rely=0.58, anchor="center")
         self.coin_status_label = tk.Label(
             self,
             text="",
-            font=("Press Start 2P", 14),
+            font=("Press Start 2P", 18),  # Increased from 14
             fg="#ffff00",
             bg="#000000",
-            pady=10
+            pady=15  # Increased from 10
         )
         self.coin_status_label.place(relx=0.5, rely=0.46, anchor="center")
         self.ultra_scan_running = False  # Track if scan has been started

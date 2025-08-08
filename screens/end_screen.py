@@ -25,10 +25,10 @@ class EndScreen(tk.Frame):
         title = tk.Label(
             self,
             text="GAME COMPLETE!",
-            font=("Press Start 2P", 25),
+            font=("Press Start 2P", 32),  # Increased from 25
             fg="#00ffff",
             bg="#000000",
-            pady=20
+            pady=30  # Increased from 20
         )
         title.place(relx=0.5, rely=0.15, anchor="center")
         
@@ -36,10 +36,10 @@ class EndScreen(tk.Frame):
         self.player_label = tk.Label(
             self,
             text="Player: Loading...",
-            font=("Press Start 2P", 14),
+            font=("Press Start 2P", 20),  # Increased from 14
             fg="#ffff00",
             bg="#000000",
-            pady=5
+            pady=10  # Increased from 5
         )
         self.player_label.place(relx=0.5, rely=0.3, anchor="center")
         
@@ -47,10 +47,10 @@ class EndScreen(tk.Frame):
         self.round_points_label = tk.Label(
             self,
             text="Round Points: 0",
-            font=("Press Start 2P", 16),
+            font=("Press Start 2P", 22),  # Increased from 16
             fg="#00ff00",
             bg="#000000",
-            pady=5
+            pady=10  # Increased from 5
         )
         self.round_points_label.place(relx=0.5, rely=0.35, anchor="center")
         
@@ -58,10 +58,10 @@ class EndScreen(tk.Frame):
         breakdown_title = tk.Label(
             self,
             text="POINTS BREAKDOWN:",
-            font=("Press Start 2P", 12),
+            font=("Press Start 2P", 18),  # Increased from 12
             fg="#ffaa00",
             bg="#000000",
-            pady=5
+            pady=10  # Increased from 5
         )
         breakdown_title.place(relx=0.5, rely=0.42, anchor="center")
         
@@ -69,40 +69,40 @@ class EndScreen(tk.Frame):
         self.base_points_label = tk.Label(
             self,
             text="",
-            font=("Press Start 2P", 9),
+            font=("Press Start 2P", 14),  # Increased from 9
             fg="#ffffff",
             bg="#000000",
-            pady=2
+            pady=5  # Increased from 2
         )
         self.base_points_label.place(relx=0.5, rely=0.47, anchor="center")
         
         self.tunnel_bonus_label = tk.Label(
             self,
             text="",
-            font=("Press Start 2P", 9),
+            font=("Press Start 2P", 14),  # Increased from 9
             fg="#00ffff",
             bg="#000000",
-            pady=2
+            pady=5  # Increased from 2
         )
         self.tunnel_bonus_label.place(relx=0.5, rely=0.51, anchor="center")
         
         self.led_bonus_label = tk.Label(
             self,
             text="",
-            font=("Press Start 2P", 9),
+            font=("Press Start 2P", 14),  # Increased from 9
             fg="#ff6600",
             bg="#000000",
-            pady=2
+            pady=5  # Increased from 2
         )
         self.led_bonus_label.place(relx=0.5, rely=0.55, anchor="center")
         
         self.beacon_status_label = tk.Label(
             self,
             text="",
-            font=("Press Start 2P", 8),
+            font=("Press Start 2P", 12),  # Increased from 8
             fg="#ff0000",
             bg="#000000",
-            pady=2
+            pady=5  # Increased from 2
         )
         self.beacon_status_label.place(relx=0.5, rely=0.59, anchor="center")
         
@@ -110,10 +110,10 @@ class EndScreen(tk.Frame):
         self.total_points_label = tk.Label(
             self,
             text="Total Points: Loading...",
-            font=("Press Start 2P", 18),
+            font=("Press Start 2P", 24),  # Increased from 18
             fg="#ffffff",
             bg="#000000",
-            pady=10
+            pady=15  # Increased from 10
         )
         self.total_points_label.place(relx=0.5, rely=0.67, anchor="center")
         
@@ -121,10 +121,10 @@ class EndScreen(tk.Frame):
         self.status_label = tk.Label(
             self,
             text="Points automatically saved to your account!",
-            font=("Press Start 2P", 10),
+            font=("Press Start 2P", 14),  # Increased from 10
             fg="#00ffff",
             bg="#000000",
-            pady=10
+            pady=15  # Increased from 10
         )
         self.status_label.place(relx=0.5, rely=0.75, anchor="center")
         
@@ -132,14 +132,14 @@ class EndScreen(tk.Frame):
         play_again_button = tk.Button(
             self,
             text="PLAY AGAIN",
-            font=("Press Start 2P", 15),
+            font=("Press Start 2P", 20),  # Increased from 15
             bg="#000000",
             fg="#00ff00",
             activebackground="#000000",
             activeforeground="#ff66cc",
             relief="flat",
-            padx=30,
-            pady=10,
+            padx=40,  # Increased from 30
+            pady=15,  # Increased from 10
             command=self.play_again
         )
         play_again_button.place(relx=0.5, rely=0.85, anchor="center")
@@ -148,14 +148,14 @@ class EndScreen(tk.Frame):
         self.detect_back_button = tk.Button(
             self,
             text="DETECTING 3 BALLS...",
-            font=("Press Start 2P", 12),
+            font=("Press Start 2P", 16),  # Increased from 12
             bg="#000000",
             fg="#ffff00",
             activebackground="#000000",
             activeforeground="#ff66cc",
             relief="flat",
-            padx=20,
-            pady=8,
+            padx=30,  # Increased from 20
+            pady=12,  # Increased from 8
             command=self.ultra_scan_command
         )
         self.detect_back_button.place(relx=0.5, rely=0.93, anchor="center")
@@ -164,14 +164,14 @@ class EndScreen(tk.Frame):
         exit_button = tk.Button(
             self,
             text="EXIT",
-            font=("Press Start 2P", 10),
+            font=("Press Start 2P", 14),  # Increased from 10
             bg="#660000",
             fg="#ffffff",
             activebackground="#990000",
             activeforeground="#ffffff",
             relief="flat",
-            padx=20,
-            pady=8,
+            padx=30,  # Increased from 20
+            pady=12,  # Increased from 8
             command=self.exit_application
         )
         exit_button.place(relx=0.95, rely=0.95, anchor="se")

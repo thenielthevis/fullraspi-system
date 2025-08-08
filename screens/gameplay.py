@@ -39,102 +39,102 @@ class GameplayScreen(tk.Frame):
         title = tk.Label(
             self.ui_panel,
             text="GAMEPLAY",
-            font=("Press Start 2P", 16),
+            font=("Press Start 2P", 24),  # Increased from 16
             fg="#00ffff",
             bg="#000000",
-            pady=10
+            pady=15  # Increased from 10
         )
-        title.pack(pady=(10, 5))
+        title.pack(pady=(15, 10))  # Adjusted padding
 
         # Score labels
         self.score_label = tk.Label(
             self.ui_panel,
             text=f"SCORE:\n{self.score}",
-            font=("Press Start 2P", 10),
+            font=("Press Start 2P", 14),  # Increased from 10
             fg="#ffffff",
             bg="#000000",
             justify="center"
         )
-        self.score_label.pack(pady=5)
+        self.score_label.pack(pady=10)  # Increased from 5
 
         self.guesses_label = tk.Label(
             self.ui_panel,
             text=f"GUESSES:\n{self.successful_guesses}",
-            font=("Press Start 2P", 8),
+            font=("Press Start 2P", 12),  # Increased from 8
             fg="#ffffff",
             bg="#000000",
             justify="center"
         )
-        self.guesses_label.pack(pady=5)
+        self.guesses_label.pack(pady=10)  # Increased from 5
 
         # Detection Results Display
         detection_title = tk.Label(
             self.ui_panel,
             text="DETECTION:",
-            font=("Press Start 2P", 8),
+            font=("Press Start 2P", 12),  # Increased from 8
             fg="#00ffff",
             bg="#000000"
         )
-        detection_title.pack(pady=(15, 5))
+        detection_title.pack(pady=(20, 10))  # Increased from (15, 5)
         
         self.balls_count_label = tk.Label(
             self.ui_panel,
             text="Balls: 0",
-            font=("Press Start 2P", 8),
+            font=("Press Start 2P", 12),  # Increased from 8
             fg="#00ff00",
             bg="#000000"
         )
-        self.balls_count_label.pack(pady=2)
+        self.balls_count_label.pack(pady=5)  # Increased from 2
         
         self.sectors_label = tk.Label(
             self.ui_panel,
             text="Sectors:\nNone",
-            font=("Press Start 2P", 7),
+            font=("Press Start 2P", 10),  # Increased from 7
             fg="#ffff00",
             bg="#000000",
             justify="center",
-            wraplength=100
+            wraplength=120  # Increased from 100 for better text wrapping
         )
-        self.sectors_label.pack(pady=2)
+        self.sectors_label.pack(pady=5)  # Increased from 2
         
         self.settling_label = tk.Label(
             self.ui_panel,
             text="",
-            font=("Press Start 2P", 7),
+            font=("Press Start 2P", 10),  # Increased from 7
             fg="#ff6600",
             bg="#000000",
             justify="center",
-            wraplength=100
+            wraplength=120  # Increased from 100
         )
-        self.settling_label.pack(pady=2)
+        self.settling_label.pack(pady=5)  # Increased from 2)
 
         # Instructions
         instruction_label = tk.Label(
             self.ui_panel,
             text="Watch balls\nenter sectors\nfor points!",
-            font=("Press Start 2P", 7),
+            font=("Press Start 2P", 10),  # Increased from 7
             fg="#ffffff",
             bg="#000000",
             justify="center"
         )
-        instruction_label.pack(pady=(15, 10))
+        instruction_label.pack(pady=(20, 15))  # Increased from (15, 10)
 
         # Sensor button
         scored_button = tk.Button(
             self.ui_panel,
             text="SENSOR\nDETECTED\nBALL",
-            font=("Press Start 2P", 8),
+            font=("Press Start 2P", 12),  # Increased from 8
             bg="#0f0f0f",
             fg="#00ffff",
             activebackground="#1e1e1e",
             activeforeground="#ff66cc",
             relief="flat",
-            padx=10,
-            pady=8,
+            padx=15,  # Increased from 10
+            pady=12,  # Increased from 8
             command=self.ball_scored,
             justify="center"
         )
-        scored_button.pack(pady=10, padx=5, fill="x")
+        scored_button.pack(pady=15, padx=10, fill="x")  # Increased pady from 10, padx from 5
 
         # ========== CAMERA SETUP FROM objectTest.py ==========
         self.FRAME_WIDTH, self.FRAME_HEIGHT = 1280, 960
@@ -179,8 +179,9 @@ class GameplayScreen(tk.Frame):
         self.detected_sectors = []
         self.ball_count = 0
         self.camera_running = False
+        self.auto_scored = False
 
-        # Don't start camera automatically - wait for screen to be shown
+        # Don't start camera automatically部分
 
     def init_camera(self):
         """Initialize and start the camera when the screen is shown"""
@@ -332,7 +333,6 @@ class GameplayScreen(tk.Frame):
             
             # Draw colorful ball detection (only outer circle, no inner dot)
             cv2.circle(frame, center, radius, (0, 255, 255), self.VISUAL_CONFIG['ball_circle_thickness'])
-            # Removed the small inner circle: cv2.circle(frame, center, 5, (0, 0, 255), -1)
             
             # Add ball number
             cv2.putText(frame, f"Ball {ball_count}", (center[0] - 25, center[1] - radius - 10), 
@@ -387,7 +387,6 @@ class GameplayScreen(tk.Frame):
                                     ball_center = (cx + offset_x, cy)
                                     
                                     cv2.circle(frame, ball_center, radius, (0, 255, 255), self.VISUAL_CONFIG['ball_circle_thickness'])
-                                    # Removed small inner circle: cv2.circle(frame, ball_center, 5, (0, 0, 255), -1)
                                     
                                     cv2.putText(frame, f"Ball {ball_count}", (ball_center[0] - 25, ball_center[1] - radius - 10), 
                                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
@@ -403,7 +402,6 @@ class GameplayScreen(tk.Frame):
                             ball_count += 1
                             
                             cv2.circle(frame, center, radius, (0, 255, 255), self.VISUAL_CONFIG['ball_circle_thickness'])
-                            # Removed small inner circle: cv2.circle(frame, center, 5, (0, 0, 255), -1)
                             
                             cv2.putText(frame, f"Ball {ball_count}", (center[0] - 25, center[1] - radius - 10), 
                                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
@@ -430,50 +428,47 @@ class GameplayScreen(tk.Frame):
         # Format as string
         result_parts = []
         for sector, count in sector_counts.items():
-            if count == 1:
-                result_parts.append(f"{sector}")
-            else:
-                result_parts.append(f"{sector}({count})")
+            result_parts.append(f"{sector}: {count}")
         
-        return ", ".join(result_parts)
+        return "\n".join(result_parts)
 
     def update_camera(self):
-        # Only update if camera is running and initialized
-        if not self.camera_running or self.picam2 is None:
-            return
-            
+        """Update camera feed and detect balls"""
         try:
-            frame = self.picam2.capture_array()
-            hsv = cv2.cvtColor(frame, cv2.COLOR_RGB2HSV)
-
-            # Detect all balls and their sectors using objectTest.py logic
-            detected_sectors, ball_count = self.detect_multiple_balls_and_sectors(frame, hsv)
-            self.detected_sectors = detected_sectors
-            self.ball_count = ball_count
+            if not self.camera_running or self.picam2 is None:
+                print("[Camera Update] Camera not running or not initialized")
+                return
             
-            # Get sectors as string for display
-            sectors_string = self.get_sectors_as_string(detected_sectors)
+            # Capture frame
+            frame = self.picam2.capture_array()
+            if frame is None:
+                print("[Camera Update] Failed to capture frame")
+                self.after(100, self.update_camera)
+                return
+            
+            # Convert to HSV for color detection
+            hsv = cv2.cvtColor(frame, cv2.COLOR_RGB2HSV)
+            
+            # Detect multiple balls and their sectors
+            detected_sectors, ball_count = self.detect_multiple_balls_and_sectors(frame, hsv)
+            
+            # Update detection state
+            valid_sectors = [sector for sector in detected_sectors if sector != "Unknown"]
             
             # Update UI labels
             self.balls_count_label.configure(text=f"Balls: {ball_count}")
+            sectors_string = self.get_sectors_as_string(detected_sectors)
             self.sectors_label.configure(text=f"Sectors:\n{sectors_string}")
             
-            # Check if we have exactly 3 balls with valid sectors
-            valid_sectors = [sector for sector in detected_sectors if sector != "Unknown"]
-            
-            # DEBUG: Enhanced logging for detection issues
-            print(f"[DETECTION DEBUG] Ball count: {ball_count}, Valid sectors: {len(valid_sectors)}, Sectors: {valid_sectors}")
-            print(f"[DETECTION DEBUG] Balls settled: {self.balls_settled}, First detection time: {self.first_detection_time}")
-            
-            # Handle settling time logic from objectTest.py - REQUIRE EXACTLY 3 BALLS AND 3 VALID SECTORS
+            # Settling logic
             if ball_count == 3 and len(valid_sectors) == 3 and not self.balls_settled:
-                if self.first_detection_time is None:
+                if not self.first_detection_time:
                     self.first_detection_time = time.time()
-                    print(f"🕒 3 balls and 3 valid sectors detected! Waiting {self.SETTLING_TIME} seconds for balls to settle...")
+                    print(f"🎯 First detection of 3 balls in valid sectors: {valid_sectors}")
                 
-                # Calculate remaining time
-                elapsed_time = time.time() - self.first_detection_time
-                remaining_time = self.SETTLING_TIME - elapsed_time
+                current_time = time.time()
+                elapsed_time = current_time - self.first_detection_time
+                remaining_time = max(0, self.SETTLING_TIME - elapsed_time)
                 
                 if remaining_time > 0:
                     # Display countdown
@@ -778,7 +773,7 @@ class GameplayScreen(tk.Frame):
             }
         else:
             print(f"[LED BONUS] ❌ NO MULTIPLIER - No LED colors match ball sectors")
-            print(f"[LED BONUS]   - Try again next round for bonus points!")
+            print(f"[LED BONUS]   - Try again next=round for bonus points!")
             return None
 
     def show_multiplier_popup(self, matches, multiplier, bonus_points):
@@ -803,74 +798,74 @@ class GameplayScreen(tk.Frame):
         success_label = tk.Label(
             popup,
             text="🎆 MULTIPLIER BONUS! 🎆",
-            font=("Press Start 2P", 18),
+            font=("Press Start 2P", 24),  # Increased from 18
             fg="#ff6600",
             bg="#000000"
         )
-        success_label.pack(pady=15)
+        success_label.pack(pady=20)  # Increased from 15
         
         # Match details
         match_text = f"LED Colors Match Ball Sectors!"
         match_label = tk.Label(
             popup,
             text=match_text,
-            font=("Press Start 2P", 12),
+            font=("Press Start 2P", 16),  # Increased from 12
             fg="#ffff00",
             bg="#000000"
         )
-        match_label.pack(pady=8)
+        match_label.pack(pady=12)  # Increased from 8
         
         # Show matched colors with more detail
         colors_text = f"Matched Colors: {', '.join(matches)}"
         colors_label = tk.Label(
             popup,
             text=colors_text,
-            font=("Press Start 2P", 10),
+            font=("Press Start 2P", 14),  # Increased from 10
             fg="#00ffff",
             bg="#000000"
         )
-        colors_label.pack(pady=8)
+        colors_label.pack(pady=12)  # Increased from 8
         
         # Show multiplier
         multiplier_label = tk.Label(
             popup,
             text=f"MULTIPLIER: x{multiplier}",
-            font=("Press Start 2P", 16),
+            font=("Press Start 2P", 20),  # Increased from 16
             fg="#ff00ff",
             bg="#000000"
         )
-        multiplier_label.pack(pady=10)
+        multiplier_label.pack(pady=15)  # Increased from 10
         
         # Bonus points (larger text)
         bonus_label = tk.Label(
             popup,
             text=f"+{bonus_points} BONUS POINTS!",
-            font=("Press Start 2P", 20),
+            font=("Press Start 2P", 24),  # Increased from 20
             fg="#00ff00",
             bg="#000000"
         )
-        bonus_label.pack(pady=15)
+        bonus_label.pack(pady=20)  # Increased from 15
         
         # Beacon notification
         beacon_label = tk.Label(
             popup,
             text="🚨 BEACON ACTIVATED! 🚨",
-            font=("Press Start 2P", 14),
+            font=("Press Start 2P", 18),  # Increased from 14
             fg="#ff0000",
             bg="#000000"
         )
-        beacon_label.pack(pady=8)
+        beacon_label.pack(pady=12)  # Increased from 8
         
         # Instructions
         instruction_label = tk.Label(
             popup,
             text="Great prediction! LED colors\nmatched your ball placements!",
-            font=("Press Start 2P", 8),
+            font=("Press Start 2P", 12),  # Increased from 8
             fg="#ffffff",
             bg="#000000",
             justify="center"
         )
-        instruction_label.pack(pady=10)
+        instruction_label.pack(pady=15)  # Increased from 10
         
         # Auto-close after 5 seconds (increased from 4)
         popup.after(5000, popup.destroy)

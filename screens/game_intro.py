@@ -8,41 +8,41 @@ class GameIntroScreen(tk.Frame):
         super().__init__(parent)
         self.controller = controller
         self.selected_tunnels = []
-    # Get screen dimensions for responsive background
-    self.update_idletasks()
-    screen_width = controller.winfo_screenwidth()
-    screen_height = controller.winfo_screenheight()
-    img_path = os.path.join("assets", "sp.png")
-    original_img = Image.open(img_path)
-    resized_img = original_img.resize((screen_width, screen_height), Image.Resampling.LANCZOS)
-    self.bg_image = ImageTk.PhotoImage(resized_img)
-    background_label = tk.Label(self, image=self.bg_image)
-    background_label.place(relwidth=1, relheight=1)
+        # Get screen dimensions for responsive background
+        self.update_idletasks()
+        screen_width = controller.winfo_screenwidth()
+        screen_height = controller.winfo_screenheight()
+        img_path = os.path.join("assets", "sp.png")
+        original_img = Image.open(img_path)
+        resized_img = original_img.resize((screen_width, screen_height), Image.Resampling.LANCZOS)
+        self.bg_image = ImageTk.PhotoImage(resized_img)
+        background_label = tk.Label(self, image=self.bg_image)
+        background_label.place(relwidth=1, relheight=1)
         title = tk.Label(
             self,
             text="CHOOSE 3 TUNNELS",
-            font=("Press Start 2P", 25),
+            font=("Press Start 2P", 32),  # Increased from 25
             fg="#00ffff",
             bg="#000000",
-            pady=20
+            pady=30  # Increased from 20
         )
         title.place(relx=0.5, rely=0.15, anchor="center")
         subtitle = tk.Label(
             self,
             text="PREDICT WHICH TUNNELS YOUR BALLS WILL PASS THROUGH",
-            font=("Press Start 2P", 10),
+            font=("Press Start 2P", 14),  # Increased from 10
             fg="#ffffff",
             bg="#000000",
-            pady=10
+            pady=15  # Increased from 10
         )
         subtitle.place(relx=0.5, rely=0.25, anchor="center")
         info_label = tk.Label(
             self,
             text="EACH CORRECT PREDICTION = +50 BONUS POINTS",
-            font=("Press Start 2P", 8),
+            font=("Press Start 2P", 12),  # Increased from 8
             fg="#00ff00",
             bg="#000000",
-            pady=5
+            pady=10  # Increased from 5
         )
         info_label.place(relx=0.5, rely=0.32, anchor="center")
         # Tunnel shape and touch sensor logic
@@ -73,7 +73,7 @@ class GameIntroScreen(tk.Frame):
             # Add tunnel label
             label = self.tunnel_canvas.create_text(
                 x + tunnel_width // 2, y + tunnel_height + 20,
-                text=tunnel, fill="#ffffff", font=("Press Start 2P", 10)
+                text=tunnel, fill="#ffffff", font=("Press Start 2P", 14)  # Increased from 10
             )
             self.tunnel_labels.append(label)
         # For demo: simulate touch sensor event with keypress (remove in production)
@@ -120,40 +120,37 @@ class GameIntroScreen(tk.Frame):
         confirm_button = tk.Button(
             self,
             text="CONFIRM",
-            font=("Press Start 2P", 15),
+            font=("Press Start 2P", 20),  # Increased from 15
             bg="#000000",
             fg="#00ffff",
             activebackground="#000000",
             activeforeground="#ff66cc",
             relief="flat",
-            padx=30,
-            pady=10,
+            padx=40,  # Increased from 30
+            pady=15,  # Increased from 10
             command=self.confirm_selection
         )
         confirm_button.place(relx=0.5, rely=0.75, anchor="center")
         back_button = tk.Button(
             self,
             text="BACK",
-            font=("Press Start 2P", 15),
+            font=("Press Start 2P", 20),  # Increased from 15
             bg="#000000",
             fg="#00ffff",
             activebackground="#000000",
             activeforeground="#ff66cc",
             relief="flat",
-            padx=30,
-            pady=10,
+            padx=40,  # Increased from 30
+            pady=15,  # Increased from 10
             command=lambda: self.controller.show_frame("InstructionScreen")
         )
         back_button.place(relx=0.5, rely=0.85, anchor="center")
-
 
     def reset_tunnel_selection(self):
         print("[TUNNEL RESET] Resetting tunnel selection for new game")
         self.tunnel_states = [False] * 5
         self.update_tunnel_graphics()
         print(f"[TUNNEL RESET] All tunnels reset to: {self.tunnel_states}")
-
-    # Remove select_tunnel, selection is now based on touch sensor events
 
     def confirm_selection(self):
         # Confirm only if exactly 3 tunnels are lit
@@ -188,14 +185,14 @@ class GameIntroScreen(tk.Frame):
         self.drop_balls_button = tk.Button(
             self,
             text="DROP BALLS",
-            font=("Press Start 2P", 15),
+            font=("Press Start 2P", 20),  # Increased from 15
             bg="#000000",
             fg="#ffcc00",
             activebackground="#000000",
             activeforeground="#ff66cc",
             relief="flat",
-            padx=30,
-            pady=10,
+            padx=40,  # Increased from 30
+            pady=15,  # Increased from 10
             command=self.drop_balls_action
         )
         self.drop_balls_button.place(relx=0.5, rely=0.80, anchor="center")

@@ -2,6 +2,7 @@ import tkinter as tk
 from PIL import Image, ImageTk
 import os
 import pygame
+import uuid
 
 class FinalScreen(tk.Frame):
     def __init__(self, parent, controller):
@@ -17,25 +18,25 @@ class FinalScreen(tk.Frame):
         # Don't send LED command here - wait for screen to be shown
 
         # Load background image
-    # Get screen dimensions for responsive background
-    self.update_idletasks()
-    screen_width = controller.winfo_screenwidth()
-    screen_height = controller.winfo_screenheight()
-    img_path = os.path.join("assets", "sp.png")
-    original_img = Image.open(img_path)
-    resized_img = original_img.resize((screen_width, screen_height), Image.Resampling.LANCZOS)
-    self.bg_image = ImageTk.PhotoImage(resized_img)
-    background_label = tk.Label(self, image=self.bg_image)
-    background_label.place(relwidth=1, relheight=1)
+        # Get screen dimensions for responsive background
+        self.update_idletasks()
+        screen_width = controller.winfo_screenwidth()
+        screen_height = controller.winfo_screenheight()
+        img_path = os.path.join("assets", "sp.png")
+        original_img = Image.open(img_path)
+        resized_img = original_img.resize((screen_width, screen_height), Image.Resampling.LANCZOS)
+        self.bg_image = ImageTk.PhotoImage(resized_img)
+        background_label = tk.Label(self, image=self.bg_image)
+        background_label.place(relwidth=1, relheight=1)
 
         # Title
         title = tk.Label(
             self,
             text="FINAL ROUND",
-            font=("Press Start 2P", 25),
+            font=("Press Start 2P", 32),  # Increased from 25 to match instructions.py
             fg="#00ffff",
             bg="#000000",
-            pady=20
+            pady=30  # Increased from 20 to match instructions.py
         )
         title.place(relx=0.5, rely=0.15, anchor="center")
 
@@ -46,88 +47,89 @@ class FinalScreen(tk.Frame):
             relief="ridge",
             bd=3
         )
-        results_frame.place(relx=0.5, rely=0.35, anchor="center", relwidth=0.8, relheight=0.25)
+        results_frame.place(relx=0.5, rely=0.35, anchor="center", relwidth=0.8, relheight=0.3)  # Increased relheight for better spacing
 
         # Results title
         results_title = tk.Label(
             results_frame,
             text="BALL LANDING RESULTS:",
-            font=("Press Start 2P", 14),
+            font=("Press Start 2P", 20),  # Increased from 14
             fg="#00ffff",
             bg="#000000",
-            pady=10
+            pady=15  # Increased from 10
         )
-        results_title.pack(pady=(10, 5))
+        results_title.pack(pady=(15, 10))  # Adjusted padding for better spacing
 
         # Ball sectors display (will be updated when screen is shown)
         self.sectors_display = tk.Label(
             results_frame,
             text="Loading ball positions...",
-            font=("Press Start 2P", 12),
+            font=("Press Start 2P", 16),  # Increased from 12
             fg="#ffffff",
             bg="#000000",
             justify="center"
         )
-        self.sectors_display.pack(pady=5)
+        self.sectors_display.pack(pady=10)  # Increased from 5
 
         # Individual ball colors (will be created dynamically)
         self.ball_colors_frame = tk.Frame(results_frame, bg="#000000")
-        self.ball_colors_frame.pack(pady=10)
+        self.ball_colors_frame.pack(pady=15)  # Increased from 10
 
         # Points calculation
         self.points_label = tk.Label(
             results_frame,
             text="Calculating points...",
-            font=("Press Start 2P", 10),
+            font=("Press Start 2P", 14),  # Increased from 10
             fg="#00ff00",
             bg="#000000"
         )
-        self.points_label.pack(pady=5)
+        self.points_label.pack(pady=10)  # Increased from 5
         
         # Prediction bonus display
         self.prediction_label = tk.Label(
             results_frame,
             text="",
-            font=("Press Start 2P", 8),
+            font=("Press Start 2P", 12),  # Increased from 8
             fg="#00AAFF",
             bg="#000000"
         )
-        self.prediction_label.pack(pady=2)
+        self.prediction_label.pack(pady=5)  # Increased from 2
+
         # Subtitle
         subtitle = tk.Label(
             self,
             text="LIGHTS SPINNING AUTOMATICALLY!",
-            font=("Press Start 2P", 12),
+            font=("Press Start 2P", 16),  # Increased from 12
             fg="#ffffff",
             bg="#000000",
-            pady=10
+            pady=15  # Increased from 10
         )
-        subtitle.place(relx=0.5, rely=0.6, anchor="center")
+        subtitle.place(relx=0.5, rely=0.65, anchor="center")  # Adjusted rely from 0.6 for better spacing
 
         # Complete button
         complete_button = tk.Button(
             self,
             text="COMPLETE ROUND",
-            font=("Press Start 2P", 15),
+            font=("Press Start 2P", 20),  # Increased from 15 to match instructions.py
             bg="#000000",
             fg="#00ffff",
             activebackground="#000000",
             activeforeground="#ff66cc",
             relief="flat",
-            padx=30,
-            pady=10,
+            padx=40,  # Increased from 30 to match instructions.py
+            pady=15,  # Increased from 10 to match instructions.py
             command=self.complete_round
         )
-        complete_button.place(relx=0.5, rely=0.75, anchor="center")
+        complete_button.place(relx=0.5, rely=0.8, anchor="center")  # Adjusted rely from 0.75 for better spacing
 
         # Footer
         footer = tk.Label(
             self,
             text="BALL COLORS DETERMINE POINTS AWARDED",
-            font=("Press Start 2P", 10),
+            font=("Press Start 2P", 14),  # Increased from 10
             fg="#ffffff",
             bg="#000000",
-            pady=5
+            pady=10  # Increased from 5
         )
         footer.place(relx=0.5, rely=0.9, anchor="center")
 
@@ -172,15 +174,15 @@ class FinalScreen(tk.Frame):
         """Flash the points label between gold and white for celebration effect"""
         if self.animation_count < 6:  # Flash 3 times (6 color changes)
             if self.animation_count % 2 == 0:
-                self.points_label.configure(fg="#FFFFFF", font=("Press Start 2P", 12))  # White and bigger
+                self.points_label.configure(fg="#FFFFFF", font=("Press Start 2P", 16))  # Increased from 12
             else:
-                self.points_label.configure(fg="#FFD700", font=("Press Start 2P", 10))  # Gold and normal
+                self.points_label.configure(fg="#FFD700", font=("Press Start 2P", 14))  # Increased from 10
             
             self.animation_count += 1
             self.after(300, self.flash_points_label)  # Flash every 300ms
         else:
             # End animation with final gold color
-            self.points_label.configure(fg="#FFD700", font=("Press Start 2P", 10))
+            self.points_label.configure(fg="#FFD700", font=("Press Start 2P", 14))  # Increased from 10
             self.animation_active = False
 
     def create_bonus_popup(self, matched_balls, bonus_points):
@@ -214,75 +216,75 @@ class FinalScreen(tk.Frame):
         self.popup_title = tk.Label(
             self.bonus_popup,
             text=title_text,
-            font=("Press Start 2P", 20),
+            font=("Press Start 2P", 24),  # Increased from 20
             fg="#FF0000",  # Red text
             bg="#FFD700",  # Gold background
             pady=20
         )
-        self.popup_title.pack(pady=10)
+        self.popup_title.pack(pady=15)  # Increased from 10
         
         # Matched balls info
         matched_text = f"🎯 MATCHED BALLS: {len(matched_balls)}"
         matched_label = tk.Label(
             self.bonus_popup,
             text=matched_text,
-            font=("Press Start 2P", 12),
+            font=("Press Start 2P", 16),  # Increased from 12
             fg="#000000",
             bg="#FFD700"
         )
-        matched_label.pack(pady=5)
+        matched_label.pack(pady=10)  # Increased from 5
         
         # List matched balls
         for ball in matched_balls:
             ball_label = tk.Label(
                 self.bonus_popup,
                 text=f"⚡ {ball}",
-                font=("Press Start 2P", 10),
+                font=("Press Start 2P", 14),  # Increased from 10
                 fg="#0000FF",  # Blue text
                 bg="#FFD700"
             )
-            ball_label.pack(pady=2)
+            ball_label.pack(pady=5)  # Increased from 2
         
         # Bonus points display
         bonus_text = f"💰 BONUS POINTS: +{bonus_points}"
         bonus_label = tk.Label(
             self.bonus_popup,
             text=bonus_text,
-            font=("Press Start 2P", 14),
+            font=("Press Start 2P", 18),  # Increased from 14
             fg="#00AA00",  # Green text
             bg="#FFD700"
         )
-        bonus_label.pack(pady=10)
+        bonus_label.pack(pady=15)  # Increased from 10
         
         # Fun message
         fun_message = tk.Label(
             self.bonus_popup,
             text="🚀 INCREDIBLE! 🚀",
-            font=("Press Start 2P", 16),
+            font=("Press Start 2P", 20),  # Increased from 16
             fg="#FF6600",  # Orange text
             bg="#FFD700"
         )
-        fun_message.pack(pady=5)
+        fun_message.pack(pady=10)  # Increased from 5
         
         # Auto-close countdown
         self.countdown_label = tk.Label(
             self.bonus_popup,
             text="Auto-closing in 2...",
-            font=("Press Start 2P", 8),
+            font=("Press Start 2P", 12),  # Increased from 8
             fg="#666666",
             bg="#FFD700"
         )
-        self.countdown_label.pack(pady=5)
+        self.countdown_label.pack(pady=10)  # Increased from 5
         
         # Optional: Add click to close functionality
         close_hint = tk.Label(
             self.bonus_popup,
             text="(Click anywhere to close)",
-            font=("Press Start 2P", 6),
+            font=("Press Start 2P", 10),  # Increased from 6
             fg="#999999",
             bg="#FFD700"
         )
-        close_hint.pack(pady=2)
+        close_hint.pack(pady=5)  # Increased from 2
         
         # Bind click to close
         self.bonus_popup.bind("<Button-1>", lambda e: self.close_bonus_popup())
@@ -339,7 +341,7 @@ class FinalScreen(tk.Frame):
         print(f"🎉 LED BONUS POPUP CLOSED")
 
     def tkraise(self, aboveThis=None):
-        """Override tkraise to start LEDs when screen is shown"""
+        """Override tkraise to start LEDs when screen lap when screen is shown"""
         super().tkraise(aboveThis)
         
         # 🚨 VALIDATE: Only proceed if we have exactly 3 balls and 3 valid sectors
@@ -417,13 +419,13 @@ class FinalScreen(tk.Frame):
             for i, sector in enumerate(sectors):
                 print(f"   - Processing ball {i+1}: {sector}")
                 ball_frame = tk.Frame(self.ball_colors_frame, bg="#000000")
-                ball_frame.pack(side=tk.LEFT, padx=10, pady=5)
+                ball_frame.pack(side=tk.LEFT, padx=15, pady=10)  # Increased padx from 10, pady from 5
                 
                 # Ball number label
                 ball_label = tk.Label(
                     ball_frame,
                     text=f"Ball {i+1}:",
-                    font=("Press Start 2P", 8),
+                    font=("Press Start 2P", 12),  # Increased from 8
                     fg="#ffffff",
                     bg="#000000"
                 )
@@ -434,13 +436,13 @@ class FinalScreen(tk.Frame):
                 color_label = tk.Label(
                     ball_frame,
                     text=f"  {sector}  ",
-                    font=("Press Start 2P", 10),
+                    font=("Press Start 2P", 14),  # Increased from 10
                     fg="#000000",
                     bg=color_display,
                     relief="raised",
                     bd=2
                 )
-                color_label.pack(pady=2)
+                color_label.pack(pady=5)  # Increased from 2
                 
                 # Base points only (no LED bonus yet)
                 base_ball_points = self.color_points.get(sector, 0)
@@ -449,7 +451,7 @@ class FinalScreen(tk.Frame):
                 points_label = tk.Label(
                     ball_frame,
                     text=f"{base_ball_points} pts",
-                    font=("Press Start 2P", 7),
+                    font=("Press Start 2P", 10),  # Increased from 7
                     fg="#00ff00",
                     bg="#000000"
                 )
@@ -590,13 +592,13 @@ class FinalScreen(tk.Frame):
         # Recreate ball displays with LED highlighting
         for i, sector in enumerate(sectors):
             ball_frame = tk.Frame(self.ball_colors_frame, bg="#000000")
-            ball_frame.pack(side=tk.LEFT, padx=10, pady=5)
+            ball_frame.pack(side=tk.LEFT, padx=15, pady=10)  # Increased padx from 10, pady from 5
             
             # Ball number label
             ball_label = tk.Label(
                 ball_frame,
                 text=f"Ball {i+1}:",
-                font=("Press Start 2P", 8),
+                font=("Press Start 2P", 12),  # Increased from 8
                 fg="#ffffff",
                 bg="#000000"
             )
@@ -609,7 +611,7 @@ class FinalScreen(tk.Frame):
             color_label = tk.Label(
                 ball_frame,
                 text=f"  {sector}  ",
-                font=("Press Start 2P", 10),
+                font=("Press Start 2P", 14),  # Increased from 10
                 fg="#000000",
                 bg=color_display,
                 relief="raised",
@@ -617,7 +619,7 @@ class FinalScreen(tk.Frame):
                 highlightbackground="#FFD700" if is_led_match else color_display,
                 highlightthickness=2 if is_led_match else 0
             )
-            color_label.pack(pady=2)
+            color_label.pack(pady=5)  # Increased from 2
             
             # Points with LED bonus
             base_ball_points = self.color_points.get(sector, 0)
@@ -635,7 +637,7 @@ class FinalScreen(tk.Frame):
             points_label = tk.Label(
                 ball_frame,
                 text=points_text,
-                font=("Press Start 2P", 7),
+                font=("Press Start 2P", 10),  # Increased from 7
                 fg=points_color,
                 bg="#000000"
             )
